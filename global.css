@@ -1,0 +1,127 @@
+@import "tailwindcss";
+@import "uniwind";
+@import "heroui-native/styles";
+
+@source "./node_modules/heroui-native/lib";
+
+/*
+ * OpenCode Theme — classic shadcn neutral
+ *
+ * Monochromatic palette. Primary is near-black in light, near-white in dark.
+ * No colorful accents. Moderate radius (0.625rem base).
+ */
+
+@theme {
+  --radius: 0.25rem;
+  --field-radius: var(--radius);
+  --field-border-width: 1px;
+  --border-width-field: 1px;
+}
+
+@layer theme {
+  :root {
+    @variant light {
+      --background: oklch(1 0 0);
+      --foreground: oklch(0.145 0 0);
+
+      --surface: oklch(1 0 0);
+      --surface-foreground: oklch(0.145 0 0);
+      --surface-secondary: oklch(0.97 0 0);
+      --surface-secondary-foreground: oklch(0.205 0 0);
+      --surface-tertiary: oklch(0.97 0 0);
+      --surface-tertiary-foreground: oklch(0.205 0 0);
+
+      --overlay: oklch(1 0 0);
+      --overlay-foreground: oklch(0.145 0 0);
+
+      --muted: oklch(0.556 0 0);
+
+      --default: oklch(0.97 0 0);
+      --default-foreground: oklch(0.205 0 0);
+
+      /* Primary = near-black */
+      --accent: oklch(0.205 0 0);
+      --accent-foreground: oklch(0.985 0 0);
+
+      --field-background: oklch(1 0 0);
+      --field-foreground: oklch(0.145 0 0);
+      --field-placeholder: oklch(0.556 0 0);
+      --field-border: oklch(0.7 0 0);
+      --field-border-width: 1px;
+
+      --success: oklch(0.577 0.174 149.642);
+      --success-foreground: oklch(0.985 0 0);
+      --warning: oklch(0.769 0.188 70.08);
+      --warning-foreground: oklch(0.205 0 0);
+      --danger: oklch(0.577 0.245 27.325);
+      --danger-foreground: oklch(0.985 0 0);
+
+      --segment: oklch(1 0 0);
+      --segment-foreground: oklch(0.145 0 0);
+
+      --border: oklch(0.922 0 0);
+      --separator: oklch(0.922 0 0);
+      --focus: oklch(0.708 0 0);
+      --link: oklch(0.205 0 0);
+
+      --surface-shadow:
+        0 1px 2px 0 rgba(0, 0, 0, 0.04),
+        0 0 1px 0 rgba(0, 0, 0, 0.06);
+      --overlay-shadow:
+        0 2px 8px 0 rgba(0, 0, 0, 0.06),
+        0 0 1px 0 rgba(0, 0, 0, 0.04);
+      --field-shadow:
+        0 1px 2px 0 rgba(0, 0, 0, 0.04),
+        0 0 1px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    @variant dark {
+      --background: oklch(0.145 0 0);
+      --foreground: oklch(0.985 0 0);
+
+      --surface: oklch(0.205 0 0);
+      --surface-foreground: oklch(0.985 0 0);
+      --surface-secondary: oklch(0.269 0 0);
+      --surface-secondary-foreground: oklch(0.985 0 0);
+      --surface-tertiary: oklch(0.269 0 0);
+      --surface-tertiary-foreground: oklch(0.985 0 0);
+
+      --overlay: oklch(0.205 0 0);
+      --overlay-foreground: oklch(0.985 0 0);
+
+      --muted: oklch(0.708 0 0);
+
+      --default: oklch(0.269 0 0);
+      --default-foreground: oklch(0.985 0 0);
+
+      /* Primary = near-white (inverted) */
+      --accent: oklch(0.922 0 0);
+      --accent-foreground: oklch(0.205 0 0);
+
+      --field-background: oklch(0.205 0 0);
+      --field-foreground: oklch(0.985 0 0);
+      --field-placeholder: oklch(0.708 0 0);
+      --field-border: oklch(1 0 0 / 40%);
+      --field-border-width: 1px;
+
+      --success: oklch(0.696 0.17 162.48);
+      --success-foreground: oklch(0.205 0 0);
+      --warning: oklch(0.769 0.188 70.08);
+      --warning-foreground: oklch(0.205 0 0);
+      --danger: oklch(0.704 0.191 22.216);
+      --danger-foreground: oklch(0.985 0 0);
+
+      --segment: oklch(0.269 0 0);
+      --segment-foreground: oklch(0.985 0 0);
+
+      --border: oklch(1 0 0 / 10%);
+      --separator: oklch(1 0 0 / 10%);
+      --focus: oklch(0.556 0 0);
+      --link: oklch(0.985 0 0);
+
+      --surface-shadow: 0 0 0 0 transparent inset;
+      --overlay-shadow: 0 0 1px 0 rgba(255, 255, 255, 0.1) inset;
+      --field-shadow: 0 0 0 0 transparent inset;
+    }
+  }
+}
