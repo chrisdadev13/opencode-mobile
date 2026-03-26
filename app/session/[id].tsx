@@ -1,5 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { Part } from "@opencode-ai/sdk/client";
+import type {
+  Part,
+  PermissionRequest,
+  QuestionAnswer,
+  QuestionRequest,
+} from "@opencode-ai/sdk/v2/client";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -48,6 +53,28 @@ type ToolPartType = Extract<Part, { type: "tool" }>;
 
 function getToolParts(parts: Part[]) {
   return parts.filter((p): p is ToolPartType => p.type === "tool");
+}
+
+type ReasoningPartType = Extract<Part, { type: "reasoning" }>;
+type FilePartType = Extract<Part, { type: "file" }>;
+type PatchPartType = Extract<Part, { type: "patch" }>;
+type RetryPartType = Extract<Part, { type: "retry" }>;
+type SubtaskPartType = Extract<Part, { type: "subtask" }>;
+
+function getReasoningParts(parts: Part[]): ReasoningPartType[] {
+  return parts.filter((p): p is ReasoningPartType => p.type === "reasoning");
+}
+function getFileParts(parts: Part[]): FilePartType[] {
+  return parts.filter((p): p is FilePartType => p.type === "file");
+}
+function getPatchParts(parts: Part[]): PatchPartType[] {
+  return parts.filter((p): p is PatchPartType => p.type === "patch");
+}
+function getRetryParts(parts: Part[]): RetryPartType[] {
+  return parts.filter((p): p is RetryPartType => p.type === "retry");
+}
+function getSubtaskParts(parts: Part[]): SubtaskPartType[] {
+  return parts.filter((p): p is SubtaskPartType => p.type === "subtask");
 }
 
 type ToolGroup = {
@@ -150,6 +177,11 @@ export default function SessionScreen() {
     title,
     sendMessage,
     abort,
+    pendingPermission,
+    replyPermission,
+    pendingQuestion,
+    replyQuestion,
+    rejectQuestion,
   } = useSession(id);
 
   const {
@@ -264,7 +296,8 @@ export default function SessionScreen() {
             style={{ fontFamily: Fonts.sans, fontWeight: "600", fontSize: 16 }}
             numberOfLines={1}
           >
-            {title || (messages.length > 0 || loading ? "Session" : "New Session")}
+            {title ||
+              (messages.length > 0 || loading ? "Session" : "New Session")}
           </Text>
 
           {isBusy ? (
@@ -571,7 +604,11 @@ export default function SessionScreen() {
                   onPress={() => setEffortPickerVisible(true)}
                   disabled={activeVariants.length === 0}
                 >
-                  <Ionicons name="speedometer-outline" size={13} color={colors.muted} />
+                  <Ionicons
+                    name="speedometer-outline"
+                    size={13}
+                    color={colors.muted}
+                  />
                   <Text
                     className="text-muted"
                     style={{
@@ -925,9 +962,7 @@ export default function SessionScreen() {
               <Ionicons
                 name="speedometer-outline"
                 size={16}
-                color={
-                  selectedVariant === null ? colors.accent : colors.muted
-                }
+                color={selectedVariant === null ? colors.accent : colors.muted}
               />
               <Text
                 style={{
@@ -941,11 +976,7 @@ export default function SessionScreen() {
                 Default
               </Text>
               {selectedVariant === null && (
-                <Ionicons
-                  name="checkmark"
-                  size={18}
-                  color={colors.accent}
-                />
+                <Ionicons name="checkmark" size={18} color={colors.accent} />
               )}
             </Pressable>
             {/* Variant options */}
@@ -998,7 +1029,456 @@ export default function SessionScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Permission prompt */}
+      {pendingPermission && (
+        <PermissionPrompt
+          permission={pendingPermission}
+          onReply={(reply) => replyPermission(pendingPermission.id, reply)}
+          colors={colors}
+          bottomInset={insets.bottom}
+        />
+      )}
+
+      {/* Question prompt */}
+      {pendingQuestion && (
+        <QuestionPrompt
+          question={pendingQuestion}
+          onReply={(answers) => replyQuestion(pendingQuestion.id, answers)}
+          onReject={() => rejectQuestion(pendingQuestion.id)}
+          colors={colors}
+          bottomInset={insets.bottom}
+        />
+      )}
     </KeyboardAvoidingView>
+  );
+}
+
+function PermissionPrompt({
+  permission,
+  onReply,
+  colors,
+  bottomInset,
+}: {
+  permission: PermissionRequest;
+  onReply: (reply: "once" | "always" | "reject") => void;
+  colors: (typeof Colors)["light"];
+  bottomInset: number;
+}) {
+  return (
+    <Modal visible transparent animationType="slide">
+      <Pressable
+        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }}
+        onPress={() => onReply("reject")}
+      >
+        <View style={{ flex: 1 }} />
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: colors.background,
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            paddingBottom: Math.max(bottomInset, 16),
+            paddingHorizontal: 16,
+            paddingTop: 16,
+          }}
+        >
+          {/* Header */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 12,
+            }}
+          >
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={22}
+              color="#f59e0b"
+            />
+            <Text
+              style={{
+                fontFamily: Fonts.sans,
+                fontSize: 16,
+                fontWeight: "600",
+                color: colors.text,
+                flex: 1,
+              }}
+            >
+              Permission Required
+            </Text>
+          </View>
+
+          {/* Permission type */}
+          <View
+            style={{
+              backgroundColor: colors.surfaceSecondary,
+              borderRadius: 6,
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+              alignSelf: "flex-start",
+              marginBottom: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: Fonts.mono,
+                fontSize: 12,
+                color: colors.muted,
+              }}
+            >
+              {permission.permission}
+            </Text>
+          </View>
+
+          {/* Patterns */}
+          {permission.patterns.length > 0 && (
+            <View style={{ marginBottom: 12 }}>
+              {permission.patterns.map((p, i) => (
+                <Text
+                  key={i}
+                  style={{
+                    fontFamily: Fonts.mono,
+                    fontSize: 12,
+                    color: colors.text,
+                    marginTop: 2,
+                  }}
+                  numberOfLines={1}
+                >
+                  {p}
+                </Text>
+              ))}
+            </View>
+          )}
+
+          {/* Action buttons */}
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
+            <Pressable
+              onPress={() => onReply("reject")}
+              style={{
+                flex: 1,
+                height: 44,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: colors.border,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: Fonts.sans,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: colors.destructive,
+                }}
+              >
+                Deny
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onReply("always")}
+              style={{
+                flex: 1,
+                height: 44,
+                borderRadius: 10,
+                backgroundColor: colors.surfaceSecondary,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: Fonts.sans,
+                  fontSize: 14,
+                  fontWeight: "500",
+                  color: colors.text,
+                }}
+              >
+                Always
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onReply("once")}
+              style={{
+                flex: 1,
+                height: 44,
+                borderRadius: 10,
+                backgroundColor: colors.accent,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: Fonts.sans,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: colors.background,
+                }}
+              >
+                Allow
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function QuestionPrompt({
+  question,
+  onReply,
+  onReject,
+  colors,
+  bottomInset,
+}: {
+  question: QuestionRequest;
+  onReply: (answers: QuestionAnswer[]) => void;
+  onReject: () => void;
+  colors: (typeof Colors)["light"];
+  bottomInset: number;
+}) {
+  const [selections, setSelections] = useState<string[][]>(
+    question.questions.map(() => []),
+  );
+  const [customTexts, setCustomTexts] = useState<string[]>(
+    question.questions.map(() => ""),
+  );
+
+  const toggleOption = (qIdx: number, label: string) => {
+    setSelections((prev) => {
+      const updated = [...prev];
+      const current = updated[qIdx]!;
+      const isMultiple = question.questions[qIdx]?.multiple ?? false;
+
+      if (isMultiple) {
+        updated[qIdx] = current.includes(label)
+          ? current.filter((l) => l !== label)
+          : [...current, label];
+      } else {
+        updated[qIdx] = current.includes(label) ? [] : [label];
+      }
+      return updated;
+    });
+  };
+
+  const handleSubmit = () => {
+    const answers: QuestionAnswer[] = selections.map((sel, i) => {
+      const custom = customTexts[i]?.trim();
+      if (custom) return [custom];
+      return sel;
+    });
+    onReply(answers);
+  };
+
+  const hasAnswer =
+    selections.some((s) => s.length > 0) ||
+    customTexts.some((t) => t.trim().length > 0);
+
+  return (
+    <Modal visible transparent animationType="slide">
+      <Pressable
+        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }}
+        onPress={onReject}
+      >
+        <View style={{ flex: 1 }} />
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: colors.background,
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            paddingBottom: Math.max(bottomInset, 16),
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            maxHeight: "70%",
+          }}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {question.questions.map((q, qIdx) => (
+              <View key={qIdx} style={{ marginBottom: 16 }}>
+                {/* Header */}
+                <Text
+                  style={{
+                    fontFamily: Fonts.sans,
+                    fontSize: 15,
+                    fontWeight: "600",
+                    color: colors.text,
+                    marginBottom: 4,
+                  }}
+                >
+                  {q.header}
+                </Text>
+                {/* Question */}
+                <Text
+                  style={{
+                    fontFamily: Fonts.sans,
+                    fontSize: 14,
+                    color: colors.muted,
+                    marginBottom: 12,
+                    lineHeight: 20,
+                  }}
+                >
+                  {q.question}
+                </Text>
+                {/* Options */}
+                <View style={{ gap: 8 }}>
+                  {q.options.map((opt) => {
+                    const selected = selections[qIdx]?.includes(opt.label);
+                    return (
+                      <Pressable
+                        key={opt.label}
+                        onPress={() => toggleOption(qIdx, opt.label)}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          borderRadius: 10,
+                          borderWidth: 1,
+                          borderColor: selected ? colors.accent : colors.border,
+                          backgroundColor: selected
+                            ? colors.surfaceSecondary
+                            : "transparent",
+                          gap: 10,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: q.multiple ? 4 : 10,
+                            borderWidth: 2,
+                            borderColor: selected
+                              ? colors.accent
+                              : colors.muted,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {selected && (
+                            <Ionicons
+                              name="checkmark"
+                              size={14}
+                              color={colors.accent}
+                            />
+                          )}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              fontFamily: Fonts.sans,
+                              fontSize: 14,
+                              fontWeight: "500",
+                              color: colors.text,
+                            }}
+                          >
+                            {opt.label}
+                          </Text>
+                          {opt.description ? (
+                            <Text
+                              style={{
+                                fontFamily: Fonts.sans,
+                                fontSize: 12,
+                                color: colors.muted,
+                                marginTop: 2,
+                              }}
+                            >
+                              {opt.description}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {/* Custom input */}
+                {q.custom !== false && (
+                  <TextInput
+                    placeholder="Or type a custom answer..."
+                    placeholderTextColor={colors.muted}
+                    value={customTexts[qIdx]}
+                    onChangeText={(text) =>
+                      setCustomTexts((prev) => {
+                        const updated = [...prev];
+                        updated[qIdx] = text;
+                        return updated;
+                      })
+                    }
+                    style={{
+                      marginTop: 10,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 10,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontFamily: Fonts.sans,
+                      fontSize: 14,
+                      color: colors.text,
+                    }}
+                  />
+                )}
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* Actions */}
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+            <Pressable
+              onPress={onReject}
+              style={{
+                flex: 1,
+                height: 44,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: colors.border,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: Fonts.sans,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: colors.muted,
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={handleSubmit}
+              style={{
+                flex: 2,
+                height: 44,
+                borderRadius: 10,
+                backgroundColor: hasAnswer
+                  ? colors.accent
+                  : colors.surfaceSecondary,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: hasAnswer ? 1 : 0.5,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: Fonts.sans,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: hasAnswer ? colors.background : colors.muted,
+                }}
+              >
+                Submit
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -1210,9 +1690,23 @@ function MessageBubble({
   const text = getTextFromParts(parts);
   const tools = getToolParts(parts);
   const groups = groupTools(tools);
+  const reasoningParts = getReasoningParts(parts);
+  const fileParts = getFileParts(parts);
+  const patchParts = getPatchParts(parts);
+  const retryParts = getRetryParts(parts);
+  const subtaskParts = getSubtaskParts(parts);
   const mdStyles = useMarkdownStyles(colors);
 
-  if (!text && groups.length === 0) return null;
+  if (
+    !text &&
+    groups.length === 0 &&
+    reasoningParts.length === 0 &&
+    fileParts.length === 0 &&
+    patchParts.length === 0 &&
+    retryParts.length === 0 &&
+    subtaskParts.length === 0
+  )
+    return null;
 
   return (
     <View className={`px-4 mb-6 ${isUser ? "items-end" : "items-start"}`}>
@@ -1224,6 +1718,11 @@ function MessageBubble({
               : "bg-transparent"
           }`}
         >
+          {/* Reasoning / thinking */}
+          {reasoningParts.map((p) => (
+            <ReasoningPartRow key={p.id} part={p} colors={colors} />
+          ))}
+          {/* Text content */}
           {text ? (
             isUser ? (
               <Text
@@ -1240,6 +1739,22 @@ function MessageBubble({
           {/* Tool calls — grouped by action */}
           {groups.map((group) => (
             <ToolGroupRow key={group.key} group={group} colors={colors} />
+          ))}
+          {/* Subtasks */}
+          {subtaskParts.map((p) => (
+            <SubtaskPartRow key={p.id} part={p} colors={colors} />
+          ))}
+          {/* File references */}
+          {fileParts.map((p) => (
+            <FilePartRow key={p.id} part={p} colors={colors} />
+          ))}
+          {/* Patches */}
+          {patchParts.map((p) => (
+            <PatchPartRow key={p.id} part={p} colors={colors} />
+          ))}
+          {/* Retries */}
+          {retryParts.map((p) => (
+            <RetryPartRow key={p.id} part={p} colors={colors} />
           ))}
         </View>
       </View>
@@ -1307,6 +1822,269 @@ function ToolGroupRow({
           })}
         </View>
       )}
+    </View>
+  );
+}
+
+function ReasoningPartRow({
+  part,
+  colors,
+}: {
+  part: ReasoningPartType;
+  colors: (typeof Colors)["light"];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const duration =
+    part.time?.end && part.time?.start
+      ? ((part.time.end - part.time.start) / 1000).toFixed(1)
+      : null;
+
+  return (
+    <View className="mb-1">
+      <Pressable
+        className="flex-row items-center"
+        style={{ gap: 6 }}
+        onPress={() => setExpanded(!expanded)}
+      >
+        <Ionicons name="bulb-outline" size={14} color={colors.muted} />
+        <Text
+          style={{
+            fontFamily: Fonts.sans,
+            fontSize: 13,
+            fontWeight: "600",
+            color: colors.muted,
+          }}
+        >
+          Thinking
+        </Text>
+        {duration && (
+          <Text
+            style={{
+              fontFamily: Fonts.mono,
+              fontSize: 11,
+              color: colors.muted,
+            }}
+          >
+            {duration}s
+          </Text>
+        )}
+        <Ionicons
+          name={expanded ? "chevron-down" : "chevron-forward"}
+          size={12}
+          color={colors.muted}
+        />
+      </Pressable>
+      {expanded && part.text ? (
+        <View
+          className="mt-1 ml-1 pl-2"
+          style={{ borderLeftWidth: 2, borderLeftColor: colors.border }}
+        >
+          <Text
+            style={{
+              fontFamily: Fonts.sans,
+              fontSize: 13,
+              fontStyle: "italic",
+              color: colors.muted,
+              lineHeight: 20,
+            }}
+            selectable
+          >
+            {part.text}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function SubtaskPartRow({
+  part,
+  colors,
+}: {
+  part: SubtaskPartType;
+  colors: (typeof Colors)["light"];
+}) {
+  return (
+    <View
+      className="mt-2 rounded-lg px-3 py-2"
+      style={{
+        backgroundColor: colors.surfaceSecondary,
+        borderWidth: 1,
+        borderColor: colors.border,
+      }}
+    >
+      <View className="flex-row items-center" style={{ gap: 6 }}>
+        <Ionicons name="git-network-outline" size={14} color={colors.muted} />
+        <Text
+          style={{
+            fontFamily: Fonts.sans,
+            fontSize: 13,
+            fontWeight: "600",
+            color: colors.text,
+          }}
+        >
+          Subtask
+        </Text>
+        <Text
+          style={{ fontFamily: Fonts.mono, fontSize: 11, color: colors.muted }}
+          numberOfLines={1}
+        >
+          {part.agent}
+        </Text>
+      </View>
+      {part.description ? (
+        <Text
+          style={{
+            fontFamily: Fonts.sans,
+            fontSize: 13,
+            color: colors.muted,
+            marginTop: 4,
+          }}
+          numberOfLines={2}
+        >
+          {part.description}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function FilePartRow({
+  part,
+  colors,
+}: {
+  part: FilePartType;
+  colors: (typeof Colors)["light"];
+}) {
+  const filename = part.filename || part.url.split("/").pop() || "file";
+  return (
+    <View className="mt-2 flex-row items-center" style={{ gap: 8 }}>
+      <FileIcon filename={filename} size={16} />
+      <Text
+        style={{
+          fontFamily: Fonts.sans,
+          fontSize: 13,
+          color: colors.text,
+          flexShrink: 1,
+        }}
+        numberOfLines={1}
+      >
+        {filename}
+      </Text>
+      <Text
+        style={{ fontFamily: Fonts.mono, fontSize: 11, color: colors.muted }}
+      >
+        {part.mime}
+      </Text>
+    </View>
+  );
+}
+
+function PatchPartRow({
+  part,
+  colors,
+}: {
+  part: PatchPartType;
+  colors: (typeof Colors)["light"];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <View className="mt-2">
+      <Pressable
+        className="flex-row items-center"
+        style={{ gap: 6 }}
+        onPress={() => setExpanded(!expanded)}
+      >
+        <Ionicons name="git-commit-outline" size={14} color={colors.muted} />
+        <Text
+          style={{
+            fontFamily: Fonts.sans,
+            fontSize: 13,
+            fontWeight: "600",
+            color: colors.text,
+          }}
+        >
+          Patch
+        </Text>
+        <Text
+          style={{ fontFamily: Fonts.mono, fontSize: 11, color: colors.muted }}
+        >
+          {part.files.length} file{part.files.length !== 1 ? "s" : ""}
+        </Text>
+        <Ionicons
+          name={expanded ? "chevron-down" : "chevron-forward"}
+          size={12}
+          color={colors.muted}
+        />
+      </Pressable>
+      {expanded && (
+        <View className="mt-1 ml-1" style={{ gap: 4 }}>
+          {part.files.map((file) => (
+            <View
+              key={file}
+              className="flex-row items-center"
+              style={{ gap: 6 }}
+            >
+              <FileIcon filename={file} size={14} />
+              <Text
+                style={{
+                  fontFamily: Fonts.mono,
+                  fontSize: 12,
+                  color: colors.muted,
+                }}
+                numberOfLines={1}
+              >
+                {file}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function RetryPartRow({
+  part,
+  colors,
+}: {
+  part: RetryPartType;
+  colors: (typeof Colors)["light"];
+}) {
+  return (
+    <View
+      className="mt-2 flex-row items-center rounded-lg px-3 py-2"
+      style={{
+        backgroundColor: colors.surfaceSecondary,
+        borderWidth: 1,
+        borderColor: colors.destructive + "33",
+        gap: 8,
+      }}
+    >
+      <Ionicons name="warning-outline" size={14} color="#f59e0b" />
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontFamily: Fonts.sans,
+            fontSize: 12,
+            fontWeight: "600",
+            color: colors.destructive,
+          }}
+        >
+          Retry attempt {part.attempt}
+        </Text>
+        <Text
+          style={{
+            fontFamily: Fonts.sans,
+            fontSize: 12,
+            color: colors.muted,
+            marginTop: 2,
+          }}
+          numberOfLines={2}
+        >
+          {part.error?.data?.message || "Unknown error"}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -1490,7 +2268,7 @@ function ThinkingShimmer({ colors }: { colors: (typeof Colors)["light"] }) {
   }));
 
   return (
-    <View className="px-4 mb-6 items-start">
+    <View className="px-7 mb-6 items-start">
       <Animated.Text
         style={[
           {

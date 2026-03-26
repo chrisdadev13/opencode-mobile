@@ -4,7 +4,10 @@ import type {
   Message,
   Part,
   SessionStatus,
-} from '@opencode-ai/sdk/client';
+  PermissionRequest,
+  QuestionRequest,
+  QuestionAnswer,
+} from '@opencode-ai/sdk/v2/client';
 import { useFocusEffect } from 'expo-router';
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
 import { getClient, getServerUrl, fetchWithTimeout } from '@/lib/opencode';
@@ -225,6 +228,8 @@ export function useSession(sessionId: string) {
   const [error, setError] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>({ type: 'idle' });
   const [title, setTitle] = useState<string>('');
+  const [pendingPermission, setPendingPermission] = useState<PermissionRequest | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<QuestionRequest | null>(null);
 
   // --- Fetch session title ---
   useEffect(() => {
@@ -365,11 +370,17 @@ export function useSession(sessionId: string) {
                   info: {
                     id: part.messageID,
                     sessionID: sessionId,
-                    role: 'assistant',
+                    role: 'assistant' as const,
                     time: { created: Date.now() / 1000 },
                     agent: '',
-                    model: { providerID: '', modelID: '' },
-                  } as Message,
+                    parentID: '',
+                    modelID: '',
+                    providerID: '',
+                    mode: '',
+                    path: { cwd: '', root: '' },
+                    cost: 0,
+                    tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+                  },
                   parts: [part],
                 },
               ];
@@ -382,6 +393,25 @@ export function useSession(sessionId: string) {
           }
           if (evt.type === 'session.idle' && evt.properties?.sessionID === sessionId) {
             setSessionStatus({ type: 'idle' });
+          }
+
+          // Permission requests
+          if (evt.type === 'permission.asked' && evt.properties?.sessionID === sessionId) {
+            setPendingPermission(evt.properties as PermissionRequest);
+          }
+          if (evt.type === 'permission.replied' && evt.properties?.sessionID === sessionId) {
+            setPendingPermission(null);
+          }
+
+          // Question requests
+          if (evt.type === 'question.asked' && evt.properties?.sessionID === sessionId) {
+            setPendingQuestion(evt.properties as QuestionRequest);
+          }
+          if (
+            (evt.type === 'question.replied' || evt.type === 'question.rejected') &&
+            evt.properties?.sessionID === sessionId
+          ) {
+            setPendingQuestion(null);
           }
         }
       } catch {
@@ -469,13 +499,59 @@ export function useSession(sessionId: string) {
   const abort = useCallback(async () => {
     try {
       const client = getClient();
-      await client.session.abort({ path: { id: sessionId } });
+      await client.session.abort({ sessionID: sessionId });
     } catch {
       // ignore
     }
   }, [sessionId]);
 
-  return { messages, loading, sending, error, sessionStatus, title, sendMessage, abort, refresh: loadMessages };
+  const replyPermission = useCallback(
+    async (requestID: string, reply: 'once' | 'always' | 'reject') => {
+      try {
+        const client = getClient();
+        await client.permission.reply({ requestID, reply });
+      } catch {
+        // clear on failure to prevent stuck UI
+      } finally {
+        setPendingPermission(null);
+      }
+    },
+    [],
+  );
+
+  const replyQuestion = useCallback(
+    async (requestID: string, answers: QuestionAnswer[]) => {
+      try {
+        const client = getClient();
+        await client.question.reply({ requestID, answers });
+      } catch {
+        // clear on failure to prevent stuck UI
+      } finally {
+        setPendingQuestion(null);
+      }
+    },
+    [],
+  );
+
+  const rejectQuestion = useCallback(
+    async (requestID: string) => {
+      try {
+        const client = getClient();
+        await client.question.reject({ requestID });
+      } catch {
+        // clear on failure to prevent stuck UI
+      } finally {
+        setPendingQuestion(null);
+      }
+    },
+    [],
+  );
+
+  return {
+    messages, loading, sending, error, sessionStatus, title, sendMessage, abort, refresh: loadMessages,
+    pendingPermission, replyPermission,
+    pendingQuestion, replyQuestion, rejectQuestion,
+  };
 }
 
 // ---------------------------------------------------------------------------

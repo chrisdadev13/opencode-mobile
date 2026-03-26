@@ -1,4 +1,4 @@
-import { createOpencodeClient, type OpencodeClient } from '@opencode-ai/sdk/client';
+import { createOpencodeClient, type OpencodeClient } from '@opencode-ai/sdk/v2/client';
 import { getLastUsedServer } from './servers';
 
 let client: OpencodeClient | null = null;
