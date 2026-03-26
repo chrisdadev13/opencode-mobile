@@ -23,7 +23,7 @@ const StyledIonicons = withUniwind(Ionicons);
 
 export default function ConnectScreen() {
   if (getLastUsedServer()) {
-    return <Redirect href="/(tabs)" />;
+    return <Redirect href="/" />;
   }
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
@@ -54,7 +54,7 @@ export default function ConnectScreen() {
       addServer(trimmedUrl, label.trim() || undefined);
     }
 
-    router.replace("/(tabs)");
+    router.replace("/");
   }
 
   return (

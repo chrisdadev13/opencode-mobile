@@ -232,23 +232,22 @@ export function useSession(sessionId: string) {
   const [pendingQuestion, setPendingQuestion] = useState<QuestionRequest | null>(null);
 
   // --- Fetch session title ---
-  useEffect(() => {
-    async function fetchTitle() {
-      try {
-        const baseUrl = getServerUrl();
-        const res = await fetchWithTimeout(`${baseUrl}/session`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          const session = data.find((s: Session) => s.id === sessionId);
-          if (session) setTitle(resolveTitle(session));
-        }
-      } catch {
-        // ignore
+  const fetchTitle = useCallback(async () => {
+    try {
+      const baseUrl = getServerUrl();
+      const res = await fetchWithTimeout(`${baseUrl}/session`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const session = data.find((s: Session) => s.id === sessionId);
+        if (session) setTitle(resolveTitle(session));
       }
+    } catch {
+      // ignore
     }
-    fetchTitle();
   }, [sessionId]);
+
+  useEffect(() => { fetchTitle(); }, [fetchTitle]);
 
   // --- Fetch initial status from server ---
   useEffect(() => {
@@ -267,6 +266,9 @@ export function useSession(sessionId: string) {
     }
     fetchStatus();
   }, [sessionId]);
+
+  // Track whether we've re-fetched the title after first assistant message
+  const hasFetchedTitleAfterReply = useRef(false);
 
   // --- Load messages from server ---
   const hasLoadedMessages = useRef(false);
@@ -297,9 +299,30 @@ export function useSession(sessionId: string) {
 
   useEffect(() => { loadMessages(); }, [loadMessages]);
 
-  // Refetch messages + status when screen regains focus
+  // Fetch pending questions & permissions for this session
+  const fetchPendingInteractions = useCallback(async () => {
+    try {
+      const client = getClient();
+      const [qRes, pRes] = await Promise.all([
+        client.question.list(),
+        client.permission.list(),
+      ]);
+      const questions = (qRes.data ?? []) as QuestionRequest[];
+      const pending = questions.find((q) => q.sessionID === sessionId);
+      setPendingQuestion(pending ?? null);
+
+      const permissions = (pRes.data ?? []) as PermissionRequest[];
+      const pendingPerm = permissions.find((p) => p.sessionID === sessionId);
+      setPendingPermission(pendingPerm ?? null);
+    } catch { /* ignore */ }
+  }, [sessionId]);
+
+  useEffect(() => { fetchPendingInteractions(); }, [fetchPendingInteractions]);
+
+  // Refetch messages + status + pending interactions when screen regains focus
   useFocusEffect(useCallback(() => {
     loadMessages();
+    fetchPendingInteractions();
     // Also refresh status
     (async () => {
       try {
@@ -310,7 +333,7 @@ export function useSession(sessionId: string) {
         if (data?.[sessionId]) setSessionStatus(data[sessionId] as SessionStatus);
       } catch { /* ignore */ }
     })();
-  }, [loadMessages, sessionId]));
+  }, [loadMessages, fetchPendingInteractions, sessionId]));
 
   // --- SSE for real-time updates ---
   useEffect(() => {
@@ -341,6 +364,14 @@ export function useSession(sessionId: string) {
               }
               return [...prev, { info, parts: [] }];
             });
+
+            // Re-fetch title after the first assistant message arrives
+            // (the server generates the title after the first reply)
+            if (info.role === 'assistant' && !hasFetchedTitleAfterReply.current) {
+              hasFetchedTitleAfterReply.current = true;
+              // Small delay to let the server finalize the title
+              setTimeout(() => fetchTitle(), 1000);
+            }
           }
 
           // Message part updated
@@ -421,7 +452,7 @@ export function useSession(sessionId: string) {
 
     subscribe();
     return () => { cancelled = true; };
-  }, [sessionId]);
+  }, [sessionId, fetchTitle]);
 
   // --- Send message ---
   const sendMessage = useCallback(

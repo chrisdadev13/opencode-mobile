@@ -90,7 +90,7 @@ function buildHtml(
         ctxText: "#e6edf3",
       }
     : {
-        bg: "#ffffff",
+        bg: "#F8F8F8",
         text: "#1f2328",
         border: "#d1d9e0",
         hunkBg: "#ddf4ff",

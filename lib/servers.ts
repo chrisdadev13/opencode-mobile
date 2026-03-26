@@ -45,3 +45,8 @@ export function removeServer(id: number): void {
   const db = getDB();
   db.execute('DELETE FROM servers WHERE id = ?', [id]);
 }
+
+export function clearAllServers(): void {
+  const db = getDB();
+  db.execute('DELETE FROM servers');
+}

@@ -21,7 +21,8 @@ import {
   useSessionStatuses,
   useSessions,
 } from "@/hooks/use-opencode";
-import { getLastUsedServer } from "@/lib/servers";
+import { clearAllServers, getLastUsedServer } from "@/lib/servers";
+import { resetClient } from "@/lib/opencode";
 
 type Session = ReturnType<typeof useSessions>["sessions"][number];
 type GroupMode = "status" | "time";
@@ -30,7 +31,7 @@ function formatTime(timestamp: number): string {
   const now = Date.now();
   const diff = now - timestamp;
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return "just now";
+  if (seconds < 60) return "now";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
@@ -570,21 +571,40 @@ export default function HomeScreen() {
             className="px-4 py-3 border-t border-border"
             style={{ paddingBottom: insets.bottom + 8 }}
           >
-            <View className="flex-row items-center gap-2 mb-1">
-              <View
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: 4,
-                  backgroundColor: error ? "#ef4444" : "#22c55e",
+            <View className="flex-row items-center justify-between mb-1">
+              <View className="flex-row items-center gap-2 flex-1">
+                <View
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: 4,
+                    backgroundColor: error ? "#ef4444" : "#22c55e",
+                  }}
+                />
+                <Text
+                  className="text-foreground text-sm"
+                  style={{ fontFamily: Fonts.sans, fontWeight: "500" }}
+                  numberOfLines={1}
+                >
+                  {server?.label || "Local Server"}
+                </Text>
+              </View>
+              <Pressable
+                hitSlop={8}
+                onPress={() => {
+                  setMenuOpen(false);
+                  clearAllServers();
+                  resetClient();
+                  router.replace("/connect");
                 }}
-              />
-              <Text
-                className="text-foreground text-sm"
-                style={{ fontFamily: Fonts.sans, fontWeight: "500" }}
               >
-                {server?.label || "Local Server"}
-              </Text>
+                <Text
+                  className="text-xs"
+                  style={{ color: "#ef4444", fontFamily: Fonts.sans }}
+                >
+                  Disconnect
+                </Text>
+              </Pressable>
             </View>
             {projectInfo && (
               <View className="ml-4 gap-0.5">
