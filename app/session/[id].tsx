@@ -461,7 +461,30 @@ export default function SessionScreen() {
                       colors={colors}
                     />
                   ))}
-                {isBusy && <ThinkingShimmer colors={colors} />}
+                {/* Inline permission prompt */}
+                {pendingPermission && (
+                  <PermissionCard
+                    permission={pendingPermission}
+                    onReply={(reply) =>
+                      replyPermission(pendingPermission.id, reply)
+                    }
+                    colors={colors}
+                  />
+                )}
+                {/* Inline question prompt */}
+                {pendingQuestion && (
+                  <QuestionCard
+                    question={pendingQuestion}
+                    onReply={(answers) =>
+                      replyQuestion(pendingQuestion.id, answers)
+                    }
+                    onReject={() => rejectQuestion(pendingQuestion.id)}
+                    colors={colors}
+                  />
+                )}
+                {isBusy && !pendingPermission && !pendingQuestion && (
+                  <ThinkingShimmer colors={colors} />
+                )}
                 {error && (
                   <View className="px-4 py-2">
                     <Text className="text-danger text-xs">{error}</Text>
@@ -1030,216 +1053,177 @@ export default function SessionScreen() {
         </Pressable>
       </Modal>
 
-      {/* Permission prompt */}
-      {pendingPermission && (
-        <PermissionPrompt
-          permission={pendingPermission}
-          onReply={(reply) => replyPermission(pendingPermission.id, reply)}
-          colors={colors}
-          bottomInset={insets.bottom}
-        />
-      )}
-
-      {/* Question prompt */}
-      {pendingQuestion && (
-        <QuestionPrompt
-          question={pendingQuestion}
-          onReply={(answers) => replyQuestion(pendingQuestion.id, answers)}
-          onReject={() => rejectQuestion(pendingQuestion.id)}
-          colors={colors}
-          bottomInset={insets.bottom}
-        />
-      )}
     </KeyboardAvoidingView>
   );
 }
 
-function PermissionPrompt({
+function PermissionCard({
   permission,
   onReply,
   colors,
-  bottomInset,
 }: {
   permission: PermissionRequest;
   onReply: (reply: "once" | "always" | "reject") => void;
   colors: (typeof Colors)["light"];
-  bottomInset: number;
 }) {
   return (
-    <Modal visible transparent animationType="slide">
-      <Pressable
-        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }}
-        onPress={() => onReply("reject")}
+    <View
+      className="mx-4 mb-4 rounded-xl px-4 py-3"
+      style={{
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: "#f59e0b44",
+      }}
+    >
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 10,
+        }}
       >
-        <View style={{ flex: 1 }} />
-        <Pressable
-          onPress={(e) => e.stopPropagation()}
+        <Ionicons name="shield-checkmark-outline" size={18} color="#f59e0b" />
+        <Text
           style={{
-            backgroundColor: colors.background,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            paddingBottom: Math.max(bottomInset, 16),
-            paddingHorizontal: 16,
-            paddingTop: 16,
+            fontFamily: Fonts.sans,
+            fontSize: 14,
+            fontWeight: "600",
+            color: colors.text,
+            flex: 1,
           }}
         >
-          {/* Header */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-              marginBottom: 12,
-            }}
-          >
-            <Ionicons
-              name="shield-checkmark-outline"
-              size={22}
-              color="#f59e0b"
-            />
-            <Text
-              style={{
-                fontFamily: Fonts.sans,
-                fontSize: 16,
-                fontWeight: "600",
-                color: colors.text,
-                flex: 1,
-              }}
-            >
-              Permission Required
-            </Text>
-          </View>
+          Permission Required
+        </Text>
+      </View>
 
-          {/* Permission type */}
-          <View
-            style={{
-              backgroundColor: colors.surfaceSecondary,
-              borderRadius: 6,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              alignSelf: "flex-start",
-              marginBottom: 10,
-            }}
-          >
+      {/* Permission type badge */}
+      <View
+        style={{
+          backgroundColor: colors.surfaceSecondary,
+          borderRadius: 6,
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          alignSelf: "flex-start",
+          marginBottom: 8,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: Fonts.mono,
+            fontSize: 12,
+            color: colors.muted,
+          }}
+        >
+          {permission.permission}
+        </Text>
+      </View>
+
+      {/* Patterns */}
+      {permission.patterns.length > 0 && (
+        <View style={{ marginBottom: 10 }}>
+          {permission.patterns.map((p, i) => (
             <Text
+              key={i}
               style={{
                 fontFamily: Fonts.mono,
                 fontSize: 12,
-                color: colors.muted,
+                color: colors.text,
+                marginTop: 2,
               }}
+              numberOfLines={1}
             >
-              {permission.permission}
+              {p}
             </Text>
-          </View>
+          ))}
+        </View>
+      )}
 
-          {/* Patterns */}
-          {permission.patterns.length > 0 && (
-            <View style={{ marginBottom: 12 }}>
-              {permission.patterns.map((p, i) => (
-                <Text
-                  key={i}
-                  style={{
-                    fontFamily: Fonts.mono,
-                    fontSize: 12,
-                    color: colors.text,
-                    marginTop: 2,
-                  }}
-                  numberOfLines={1}
-                >
-                  {p}
-                </Text>
-              ))}
-            </View>
-          )}
-
-          {/* Action buttons */}
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
-            <Pressable
-              onPress={() => onReply("reject")}
-              style={{
-                flex: 1,
-                height: 44,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: colors.border,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: Fonts.sans,
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.destructive,
-                }}
-              >
-                Deny
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => onReply("always")}
-              style={{
-                flex: 1,
-                height: 44,
-                borderRadius: 10,
-                backgroundColor: colors.surfaceSecondary,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: Fonts.sans,
-                  fontSize: 14,
-                  fontWeight: "500",
-                  color: colors.text,
-                }}
-              >
-                Always
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => onReply("once")}
-              style={{
-                flex: 1,
-                height: 44,
-                borderRadius: 10,
-                backgroundColor: colors.accent,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: Fonts.sans,
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.background,
-                }}
-              >
-                Allow
-              </Text>
-            </Pressable>
-          </View>
+      {/* Action buttons */}
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <Pressable
+          onPress={() => onReply("reject")}
+          style={{
+            flex: 1,
+            height: 38,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: colors.border,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: Fonts.sans,
+              fontSize: 13,
+              fontWeight: "600",
+              color: colors.destructive,
+            }}
+          >
+            Deny
+          </Text>
         </Pressable>
-      </Pressable>
-    </Modal>
+        <Pressable
+          onPress={() => onReply("always")}
+          style={{
+            flex: 1,
+            height: 38,
+            borderRadius: 8,
+            backgroundColor: colors.surfaceSecondary,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: Fonts.sans,
+              fontSize: 13,
+              fontWeight: "500",
+              color: colors.text,
+            }}
+          >
+            Always
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => onReply("once")}
+          style={{
+            flex: 1,
+            height: 38,
+            borderRadius: 8,
+            backgroundColor: colors.accent,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: Fonts.sans,
+              fontSize: 13,
+              fontWeight: "600",
+              color: colors.background,
+            }}
+          >
+            Allow
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
-function QuestionPrompt({
+function QuestionCard({
   question,
   onReply,
   onReject,
   colors,
-  bottomInset,
 }: {
   question: QuestionRequest;
   onReply: (answers: QuestionAnswer[]) => void;
   onReject: () => void;
   colors: (typeof Colors)["light"];
-  bottomInset: number;
 }) {
   const [selections, setSelections] = useState<string[][]>(
     question.questions.map(() => []),
@@ -1255,17 +1239,14 @@ function QuestionPrompt({
       const isMultiple = question.questions[qIdx]?.multiple ?? false;
 
       if (isMultiple) {
-        // Checkbox: toggle on/off
         updated[qIdx] = current.includes(label)
           ? current.filter((l) => l !== label)
           : [...current, label];
       } else {
-        // Radio: always select (no deselect)
         updated[qIdx] = [label];
       }
       return updated;
     });
-    // Clear custom text when selecting an option
     setCustomTexts((prev) => {
       const updated = [...prev];
       updated[qIdx] = "";
@@ -1288,215 +1269,198 @@ function QuestionPrompt({
     customTexts.some((t) => t.trim().length > 0);
 
   return (
-    <Modal visible transparent animationType="slide">
-      <Pressable
-        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }}
-        onPress={onReject}
-      >
-        <View style={{ flex: 1 }} />
-        <Pressable
-          onPress={(e) => e.stopPropagation()}
-          style={{
-            backgroundColor: colors.background,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            paddingBottom: Math.max(bottomInset, 16),
-            paddingHorizontal: 16,
-            paddingTop: 16,
-            maxHeight: "70%",
-          }}
-        >
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {question.questions.map((q, qIdx) => (
-              <View key={qIdx} style={{ marginBottom: 16 }}>
-                {/* Header */}
-                <Text
+    <View
+      className="mx-4 mb-4 rounded-xl px-4 py-3"
+      style={{
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+      }}
+    >
+      {question.questions.map((q, qIdx) => (
+        <View key={qIdx} style={{ marginBottom: qIdx < question.questions.length - 1 ? 16 : 0 }}>
+          {/* Header */}
+          <Text
+            style={{
+              fontFamily: Fonts.sans,
+              fontSize: 14,
+              fontWeight: "600",
+              color: colors.text,
+              marginBottom: 4,
+            }}
+          >
+            {q.header}
+          </Text>
+          {/* Question */}
+          <Text
+            style={{
+              fontFamily: Fonts.sans,
+              fontSize: 13,
+              color: colors.muted,
+              marginBottom: 10,
+              lineHeight: 19,
+            }}
+          >
+            {q.question}
+          </Text>
+          {/* Options */}
+          <View style={{ gap: 6 }}>
+            {q.options.map((opt) => {
+              const selected = selections[qIdx]?.includes(opt.label);
+              return (
+                <Pressable
+                  key={opt.label}
+                  onPress={() => toggleOption(qIdx, opt.label)}
                   style={{
-                    fontFamily: Fonts.sans,
-                    fontSize: 15,
-                    fontWeight: "600",
-                    color: colors.text,
-                    marginBottom: 4,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 10,
+                    paddingVertical: 8,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: selected ? colors.accent : colors.border,
+                    backgroundColor: selected
+                      ? colors.surfaceSecondary
+                      : "transparent",
+                    gap: 8,
                   }}
                 >
-                  {q.header}
-                </Text>
-                {/* Question */}
-                <Text
-                  style={{
-                    fontFamily: Fonts.sans,
-                    fontSize: 14,
-                    color: colors.muted,
-                    marginBottom: 12,
-                    lineHeight: 20,
-                  }}
-                >
-                  {q.question}
-                </Text>
-                {/* Options */}
-                <View style={{ gap: 8 }}>
-                  {q.options.map((opt) => {
-                    const selected = selections[qIdx]?.includes(opt.label);
-                    return (
-                      <Pressable
-                        key={opt.label}
-                        onPress={() => toggleOption(qIdx, opt.label)}
+                  <View
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: q.multiple ? 4 : 9,
+                      borderWidth: 2,
+                      borderColor: selected ? colors.accent : colors.muted,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {selected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={12}
+                        color={colors.accent}
+                      />
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontFamily: Fonts.sans,
+                        fontSize: 13,
+                        fontWeight: "500",
+                        color: colors.text,
+                      }}
+                    >
+                      {opt.label}
+                    </Text>
+                    {opt.description ? (
+                      <Text
                         style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          paddingHorizontal: 12,
-                          paddingVertical: 10,
-                          borderRadius: 10,
-                          borderWidth: 1,
-                          borderColor: selected ? colors.accent : colors.border,
-                          backgroundColor: selected
-                            ? colors.surfaceSecondary
-                            : "transparent",
-                          gap: 10,
+                          fontFamily: Fonts.sans,
+                          fontSize: 11,
+                          color: colors.muted,
+                          marginTop: 1,
                         }}
                       >
-                        <View
-                          style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: q.multiple ? 4 : 10,
-                            borderWidth: 2,
-                            borderColor: selected
-                              ? colors.accent
-                              : colors.muted,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {selected && (
-                            <Ionicons
-                              name="checkmark"
-                              size={14}
-                              color={colors.accent}
-                            />
-                          )}
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              fontFamily: Fonts.sans,
-                              fontSize: 14,
-                              fontWeight: "500",
-                              color: colors.text,
-                            }}
-                          >
-                            {opt.label}
-                          </Text>
-                          {opt.description ? (
-                            <Text
-                              style={{
-                                fontFamily: Fonts.sans,
-                                fontSize: 12,
-                                color: colors.muted,
-                                marginTop: 2,
-                              }}
-                            >
-                              {opt.description}
-                            </Text>
-                          ) : null}
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-                {/* Custom input */}
-                {q.custom !== false && (
-                  <TextInput
-                    placeholder="Or type a custom answer..."
-                    placeholderTextColor={colors.muted}
-                    value={customTexts[qIdx]}
-                    onChangeText={(text) => {
-                      setCustomTexts((prev) => {
-                        const updated = [...prev];
-                        updated[qIdx] = text;
-                        return updated;
-                      });
-                      // Clear option selections when typing custom
-                      if (text.trim()) {
-                        setSelections((prev) => {
-                          const updated = [...prev];
-                          updated[qIdx] = [];
-                          return updated;
-                        });
-                      }
-                    }}
-                    style={{
-                      marginTop: 10,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      borderRadius: 10,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      fontFamily: Fonts.sans,
-                      fontSize: 14,
-                      color: colors.text,
-                    }}
-                  />
-                )}
-              </View>
-            ))}
-          </ScrollView>
-
-          {/* Actions */}
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-            <Pressable
-              onPress={onReject}
+                        {opt.description}
+                      </Text>
+                    ) : null}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+          {/* Custom input */}
+          {q.custom !== false && (
+            <TextInput
+              placeholder="Or type a custom answer..."
+              placeholderTextColor={colors.muted}
+              value={customTexts[qIdx]}
+              onChangeText={(text) => {
+                setCustomTexts((prev) => {
+                  const updated = [...prev];
+                  updated[qIdx] = text;
+                  return updated;
+                });
+                if (text.trim()) {
+                  setSelections((prev) => {
+                    const updated = [...prev];
+                    updated[qIdx] = [];
+                    return updated;
+                  });
+                }
+              }}
               style={{
-                flex: 1,
-                height: 44,
-                borderRadius: 10,
+                marginTop: 8,
                 borderWidth: 1,
                 borderColor: colors.border,
-                alignItems: "center",
-                justifyContent: "center",
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 8,
+                fontFamily: Fonts.sans,
+                fontSize: 13,
+                color: colors.text,
               }}
-            >
-              <Text
-                style={{
-                  fontFamily: Fonts.sans,
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.muted,
-                }}
-              >
-                Cancel
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={handleSubmit}
-              disabled={!hasAnswer}
-              style={{
-                flex: 2,
-                height: 44,
-                borderRadius: 10,
-                backgroundColor: hasAnswer
-                  ? colors.accent
-                  : colors.surfaceSecondary,
-                alignItems: "center",
-                justifyContent: "center",
-                opacity: hasAnswer ? 1 : 0.4,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: Fonts.sans,
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: hasAnswer ? colors.background : colors.muted,
-                }}
-              >
-                Submit
-              </Text>
-            </Pressable>
-          </View>
+            />
+          )}
+        </View>
+      ))}
+
+      {/* Actions */}
+      <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+        <Pressable
+          onPress={onReject}
+          style={{
+            flex: 1,
+            height: 38,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: colors.border,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: Fonts.sans,
+              fontSize: 13,
+              fontWeight: "600",
+              color: colors.muted,
+            }}
+          >
+            Skip
+          </Text>
         </Pressable>
-      </Pressable>
-    </Modal>
+        <Pressable
+          onPress={handleSubmit}
+          disabled={!hasAnswer}
+          style={{
+            flex: 2,
+            height: 38,
+            borderRadius: 8,
+            backgroundColor: hasAnswer
+              ? colors.accent
+              : colors.surfaceSecondary,
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: hasAnswer ? 1 : 0.4,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: Fonts.sans,
+              fontSize: 13,
+              fontWeight: "600",
+              color: hasAnswer ? colors.background : colors.muted,
+            }}
+          >
+            Submit
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 

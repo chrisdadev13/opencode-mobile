@@ -297,9 +297,30 @@ export function useSession(sessionId: string) {
 
   useEffect(() => { loadMessages(); }, [loadMessages]);
 
-  // Refetch messages + status when screen regains focus
+  // Fetch pending questions & permissions for this session
+  const fetchPendingInteractions = useCallback(async () => {
+    try {
+      const client = getClient();
+      const [qRes, pRes] = await Promise.all([
+        client.question.list(),
+        client.permission.list(),
+      ]);
+      const questions = (qRes.data ?? []) as QuestionRequest[];
+      const pending = questions.find((q) => q.sessionID === sessionId);
+      setPendingQuestion(pending ?? null);
+
+      const permissions = (pRes.data ?? []) as PermissionRequest[];
+      const pendingPerm = permissions.find((p) => p.sessionID === sessionId);
+      setPendingPermission(pendingPerm ?? null);
+    } catch { /* ignore */ }
+  }, [sessionId]);
+
+  useEffect(() => { fetchPendingInteractions(); }, [fetchPendingInteractions]);
+
+  // Refetch messages + status + pending interactions when screen regains focus
   useFocusEffect(useCallback(() => {
     loadMessages();
+    fetchPendingInteractions();
     // Also refresh status
     (async () => {
       try {
@@ -310,7 +331,7 @@ export function useSession(sessionId: string) {
         if (data?.[sessionId]) setSessionStatus(data[sessionId] as SessionStatus);
       } catch { /* ignore */ }
     })();
-  }, [loadMessages, sessionId]));
+  }, [loadMessages, fetchPendingInteractions, sessionId]));
 
   // --- SSE for real-time updates ---
   useEffect(() => {
