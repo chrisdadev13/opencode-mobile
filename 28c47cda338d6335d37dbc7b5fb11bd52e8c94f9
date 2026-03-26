@@ -1,0 +1,63 @@
+lib/color/index.ts
+  9c5d415635e51a30 1-288
+app/session/[id].tsx
+  e7a2b4e63eef9890 140-141,228,535,541,745-856
+  7cd92748f45faf07 166-167,183,189-210,229,571-572,574,577-581,583,585-591,857-1000
+hooks/use-opencode.ts
+  7cd92748f45faf07 49,187,398,426
+  e7a2b4e63eef9890 425
+app/(tabs)/index.tsx
+  9c5d415635e51a30 10-11,35-39,92-94,101-104,258,395
+constants/theme.ts
+  9c5d415635e51a30 9-17
+components/spinner.tsx
+  9c5d415635e51a30 1-96
+lib/color/types.ts
+  9c5d415635e51a30 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.19",
+  "base_commit_sha": "28c47cda338d6335d37dbc7b5fb11bd52e8c94f9",
+  "prompts": {
+    "7cd92748f45faf07": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d8e9eb9b-c311-409e-ad65-d1b0bb9893ba",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 191,
+      "total_deletions": 10,
+      "accepted_lines": 190,
+      "overriden_lines": 0
+    },
+    "9c5d415635e51a30": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ee0a7a93-7951-4c88-b0b4-89a20b336eca",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 432,
+      "total_deletions": 33,
+      "accepted_lines": 417,
+      "overriden_lines": 0
+    },
+    "e7a2b4e63eef9890": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7be52b7a-9fc5-455c-b363-4c3df2602ff8",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 490,
+      "total_deletions": 374,
+      "accepted_lines": 298,
+      "overriden_lines": 0
+    }
+  }
+}
