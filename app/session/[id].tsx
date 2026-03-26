@@ -1255,17 +1255,26 @@ function QuestionPrompt({
       const isMultiple = question.questions[qIdx]?.multiple ?? false;
 
       if (isMultiple) {
+        // Checkbox: toggle on/off
         updated[qIdx] = current.includes(label)
           ? current.filter((l) => l !== label)
           : [...current, label];
       } else {
-        updated[qIdx] = current.includes(label) ? [] : [label];
+        // Radio: always select (no deselect)
+        updated[qIdx] = [label];
       }
+      return updated;
+    });
+    // Clear custom text when selecting an option
+    setCustomTexts((prev) => {
+      const updated = [...prev];
+      updated[qIdx] = "";
       return updated;
     });
   };
 
   const handleSubmit = () => {
+    if (!hasAnswer) return;
     const answers: QuestionAnswer[] = selections.map((sel, i) => {
       const custom = customTexts[i]?.trim();
       if (custom) return [custom];
@@ -1401,13 +1410,21 @@ function QuestionPrompt({
                     placeholder="Or type a custom answer..."
                     placeholderTextColor={colors.muted}
                     value={customTexts[qIdx]}
-                    onChangeText={(text) =>
+                    onChangeText={(text) => {
                       setCustomTexts((prev) => {
                         const updated = [...prev];
                         updated[qIdx] = text;
                         return updated;
-                      })
-                    }
+                      });
+                      // Clear option selections when typing custom
+                      if (text.trim()) {
+                        setSelections((prev) => {
+                          const updated = [...prev];
+                          updated[qIdx] = [];
+                          return updated;
+                        });
+                      }
+                    }}
                     style={{
                       marginTop: 10,
                       borderWidth: 1,
@@ -1452,6 +1469,7 @@ function QuestionPrompt({
             </Pressable>
             <Pressable
               onPress={handleSubmit}
+              disabled={!hasAnswer}
               style={{
                 flex: 2,
                 height: 44,
@@ -1461,7 +1479,7 @@ function QuestionPrompt({
                   : colors.surfaceSecondary,
                 alignItems: "center",
                 justifyContent: "center",
-                opacity: hasAnswer ? 1 : 0.5,
+                opacity: hasAnswer ? 1 : 0.4,
               }}
             >
               <Text
