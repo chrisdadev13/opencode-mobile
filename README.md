@@ -1,4 +1,5 @@
 # OpenCode Mobile
+<img width="1206" height="2622" alt="Simulator Screenshot - iPhone 16 Pro - 2026-03-26 at 11 29 26" src="https://github.com/user-attachments/assets/b81e6d3c-dd10-48ba-903a-d4a01067c954" />
 
 A React Native mobile app for OpenCode — an AI coding assistant.
 
