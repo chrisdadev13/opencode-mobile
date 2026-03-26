@@ -2,8 +2,6 @@
 
 A React Native mobile app for OpenCode — an AI coding assistant.
 
-<img width="580" height="1009" alt="Screenshot 2026-03-26 at 11 40 48 AM" src="https://github.com/user-attachments/assets/b63def22-bcec-4041-ad13-263a952077d0" />
-
 ## Features
 
 - Connect to a local OpenCode server
@@ -39,3 +37,5 @@ npm run android
 
 - Node.js 18+
 - Expo SDK 54
+
+<img width="580" height="1009" alt="Screenshot 2026-03-26 at 11 40 48 AM" src="https://github.com/user-attachments/assets/b63def22-bcec-4041-ad13-263a952077d0" />
