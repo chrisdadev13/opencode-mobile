@@ -19,12 +19,12 @@ export const blue = {
 export const Colors = {
   light: {
     text: '#1a1a1a',
-    background: '#ffffff',
+    background: '#F8F8F8',
     tint: '#1D1917',
     icon: '#8b8b8b',
     tabIconDefault: '#8b8b8b',
     tabIconSelected: '#1D1917',
-    surface: '#ffffff',
+    surface: '#F8F8F8',
     surfaceSecondary: '#f5f5f5',
     border: '#e5e5e5',
     muted: '#8b8b8b',

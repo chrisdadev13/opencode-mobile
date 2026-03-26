@@ -8,7 +8,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 
-const DRAWER_WIDTH = Dimensions.get('window').width * 0.8;
+const DRAWER_WIDTH = (Dimensions.get('window').width || 375) * 0.8;
 const TIMING_CONFIG = { duration: 250, easing: Easing.out(Easing.cubic) };
 
 type LeftSheetProps = {

@@ -194,7 +194,7 @@ export default function SessionScreen() {
   const [selectedModel, setSelectedModel] = useState<{
     providerID: string;
     modelID: string;
-  } | null>(null);
+  } | null>({ providerID: "opencode", modelID: "big-pickle" });
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [effortPickerVisible, setEffortPickerVisible] = useState(false);
 
@@ -2097,10 +2097,10 @@ function ChangesTab({
     try {
       const baseUrl = getServerUrl();
       const res = await fetchWithTimeout(
-        `${baseUrl}/file?path=${encodeURIComponent(filePath)}`,
+        `${baseUrl}/file/content?path=${encodeURIComponent(filePath)}`,
       );
       const data = await res.json();
-      setDiffContent(data.content ?? null);
+      setDiffContent(data.diff ?? null);
     } catch {
       setDiffContent(null);
     } finally {

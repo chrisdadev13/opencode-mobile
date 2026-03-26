@@ -232,23 +232,22 @@ export function useSession(sessionId: string) {
   const [pendingQuestion, setPendingQuestion] = useState<QuestionRequest | null>(null);
 
   // --- Fetch session title ---
-  useEffect(() => {
-    async function fetchTitle() {
-      try {
-        const baseUrl = getServerUrl();
-        const res = await fetchWithTimeout(`${baseUrl}/session`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          const session = data.find((s: Session) => s.id === sessionId);
-          if (session) setTitle(resolveTitle(session));
-        }
-      } catch {
-        // ignore
+  const fetchTitle = useCallback(async () => {
+    try {
+      const baseUrl = getServerUrl();
+      const res = await fetchWithTimeout(`${baseUrl}/session`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const session = data.find((s: Session) => s.id === sessionId);
+        if (session) setTitle(resolveTitle(session));
       }
+    } catch {
+      // ignore
     }
-    fetchTitle();
   }, [sessionId]);
+
+  useEffect(() => { fetchTitle(); }, [fetchTitle]);
 
   // --- Fetch initial status from server ---
   useEffect(() => {
@@ -267,6 +266,9 @@ export function useSession(sessionId: string) {
     }
     fetchStatus();
   }, [sessionId]);
+
+  // Track whether we've re-fetched the title after first assistant message
+  const hasFetchedTitleAfterReply = useRef(false);
 
   // --- Load messages from server ---
   const hasLoadedMessages = useRef(false);
@@ -362,6 +364,14 @@ export function useSession(sessionId: string) {
               }
               return [...prev, { info, parts: [] }];
             });
+
+            // Re-fetch title after the first assistant message arrives
+            // (the server generates the title after the first reply)
+            if (info.role === 'assistant' && !hasFetchedTitleAfterReply.current) {
+              hasFetchedTitleAfterReply.current = true;
+              // Small delay to let the server finalize the title
+              setTimeout(() => fetchTitle(), 1000);
+            }
           }
 
           // Message part updated
@@ -442,7 +452,7 @@ export function useSession(sessionId: string) {
 
     subscribe();
     return () => { cancelled = true; };
-  }, [sessionId]);
+  }, [sessionId, fetchTitle]);
 
   // --- Send message ---
   const sendMessage = useCallback(

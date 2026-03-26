@@ -21,17 +21,17 @@
 @layer theme {
   :root {
     @variant light {
-      --background: oklch(1 0 0);
+      --background: oklch(0.98 0 0);
       --foreground: oklch(0.145 0 0);
 
-      --surface: oklch(1 0 0);
+      --surface: oklch(0.98 0 0);
       --surface-foreground: oklch(0.145 0 0);
       --surface-secondary: oklch(0.97 0 0);
       --surface-secondary-foreground: oklch(0.205 0 0);
       --surface-tertiary: oklch(0.97 0 0);
       --surface-tertiary-foreground: oklch(0.205 0 0);
 
-      --overlay: oklch(1 0 0);
+      --overlay: oklch(0.98 0 0);
       --overlay-foreground: oklch(0.145 0 0);
 
       --muted: oklch(0.556 0 0);
@@ -43,7 +43,7 @@
       --accent: oklch(0.205 0 0);
       --accent-foreground: oklch(0.985 0 0);
 
-      --field-background: oklch(1 0 0);
+      --field-background: oklch(0.98 0 0);
       --field-foreground: oklch(0.145 0 0);
       --field-placeholder: oklch(0.556 0 0);
       --field-border: oklch(0.7 0 0);
@@ -56,7 +56,7 @@
       --danger: oklch(0.577 0.245 27.325);
       --danger-foreground: oklch(0.985 0 0);
 
-      --segment: oklch(1 0 0);
+      --segment: oklch(0.98 0 0);
       --segment-foreground: oklch(0.145 0 0);
 
       --border: oklch(0.922 0 0);
