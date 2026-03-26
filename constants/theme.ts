@@ -6,6 +6,15 @@
  */
 
 import { Platform } from 'react-native';
+import { generateScale, shift, type HexColor } from '@/lib/color';
+
+const interactive: HexColor = '#3b82f6';
+const blueSeed = shift(interactive, { h: -12, l: 0.128, c: 1.12 });
+
+export const blue = {
+  light: generateScale(blueSeed, false),
+  dark: generateScale(blueSeed, true),
+};
 
 export const Colors = {
   light: {

@@ -137,6 +137,8 @@ export default function SessionScreen() {
   const [inputText, setInputText] = useState("");
   const [activeTab, setActiveTab] = useState<"session" | "changes">("session");
   const [modelPickerVisible, setModelPickerVisible] = useState(false);
+  const [activeAgent, setActiveAgent] = useState<"build" | "plan">("build");
+  const [agentPickerVisible, setAgentPickerVisible] = useState(false);
   const prevMessageCount = useRef(0);
 
   const {
@@ -161,6 +163,8 @@ export default function SessionScreen() {
     providerID: string;
     modelID: string;
   } | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
+  const [effortPickerVisible, setEffortPickerVisible] = useState(false);
 
   // Use selected model, fall back to default from provider config
   const activeModel = selectedModel ?? defaultModel;
@@ -176,10 +180,33 @@ export default function SessionScreen() {
           providerName: p.name,
           modelID: m.id,
           modelName: m.name,
+          variants: m.variants,
         })),
       ),
     [providers],
   );
+
+  // Available effort variants for the active model
+  const activeVariants = useMemo(() => {
+    if (!activeModel) return [];
+    const match = allModels.find(
+      (m) =>
+        m.providerID === activeModel.providerID &&
+        m.modelID === activeModel.modelID,
+    );
+    return match?.variants ?? [];
+  }, [activeModel, allModels]);
+
+  // Reset selected variant when switching to a model that doesn't support it
+  useEffect(() => {
+    if (selectedVariant && !activeVariants.includes(selectedVariant)) {
+      setSelectedVariant(null);
+    }
+  }, [activeVariants, selectedVariant]);
+
+  const activeEffortLabel = selectedVariant
+    ? capitalize(selectedVariant)
+    : "Default";
 
   const activeModelLabel = useMemo(() => {
     if (!activeModel) return "Select model";
@@ -198,6 +225,8 @@ export default function SessionScreen() {
     await sendMessage(
       text,
       activeModel ?? undefined,
+      activeAgent,
+      selectedVariant ?? undefined,
     );
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -503,12 +532,13 @@ export default function SessionScreen() {
                 <Pressable
                   className="flex-row items-center rounded-md"
                   style={{ height: 28, paddingHorizontal: 8, gap: 4 }}
+                  onPress={() => setAgentPickerVisible(true)}
                 >
                   <Text
                     className="text-muted"
                     style={{ fontFamily: Fonts.sans, fontSize: 13 }}
                   >
-                    Build
+                    {activeAgent === "plan" ? "Plan" : "Build"}
                   </Text>
                   <Ionicons
                     name="chevron-down"
@@ -538,18 +568,27 @@ export default function SessionScreen() {
                 <Pressable
                   className="flex-row items-center rounded-md"
                   style={{ height: 28, paddingHorizontal: 8, gap: 4 }}
+                  onPress={() => setEffortPickerVisible(true)}
+                  disabled={activeVariants.length === 0}
                 >
+                  <Ionicons name="speedometer-outline" size={13} color={colors.muted} />
                   <Text
                     className="text-muted"
-                    style={{ fontFamily: Fonts.sans, fontSize: 13 }}
+                    style={{
+                      fontFamily: Fonts.sans,
+                      fontSize: 13,
+                      opacity: activeVariants.length === 0 ? 0.5 : 1,
+                    }}
                   >
-                    Default
+                    {activeEffortLabel}
                   </Text>
-                  <Ionicons
-                    name="chevron-down"
-                    size={11}
-                    color={colors.muted}
-                  />
+                  {activeVariants.length > 0 && (
+                    <Ionicons
+                      name="chevron-down"
+                      size={11}
+                      color={colors.muted}
+                    />
+                  )}
                 </Pressable>
               </View>
             </View>
@@ -700,6 +739,262 @@ export default function SessionScreen() {
                 </View>
               )}
             </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Agent picker modal */}
+      <Modal
+        visible={agentPickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setAgentPickerVisible(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }}
+          onPress={() => setAgentPickerVisible(false)}
+        >
+          <View style={{ flex: 1 }} />
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: colors.background,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              paddingBottom: Math.max(insets.bottom, 16),
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                borderBottomWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: Fonts.sans,
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                }}
+              >
+                Select Mode
+              </Text>
+              <Pressable
+                hitSlop={8}
+                onPress={() => setAgentPickerVisible(false)}
+              >
+                <Ionicons name="close" size={20} color={colors.muted} />
+              </Pressable>
+            </View>
+            {(["build", "plan"] as const).map((agent) => {
+              const isActive = activeAgent === agent;
+              return (
+                <Pressable
+                  key={agent}
+                  onPress={() => {
+                    setActiveAgent(agent);
+                    setAgentPickerVisible(false);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    gap: 10,
+                    backgroundColor: isActive
+                      ? colors.surfaceSecondary
+                      : "transparent",
+                  }}
+                >
+                  <Ionicons
+                    name={agent === "plan" ? "map-outline" : "hammer-outline"}
+                    size={16}
+                    color={isActive ? colors.accent : colors.muted}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontFamily: Fonts.sans,
+                        fontSize: 14,
+                        color: colors.text,
+                        fontWeight: isActive ? "600" : "400",
+                      }}
+                    >
+                      {capitalize(agent)}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: Fonts.sans,
+                        fontSize: 12,
+                        color: colors.muted,
+                        marginTop: 2,
+                      }}
+                    >
+                      {agent === "plan"
+                        ? "Create a plan before writing code"
+                        : "Write code and make changes"}
+                    </Text>
+                  </View>
+                  {isActive && (
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={colors.accent}
+                    />
+                  )}
+                </Pressable>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Effort picker modal */}
+      <Modal
+        visible={effortPickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEffortPickerVisible(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }}
+          onPress={() => setEffortPickerVisible(false)}
+        >
+          <View style={{ flex: 1 }} />
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: colors.background,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              paddingBottom: Math.max(insets.bottom, 16),
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                borderBottomWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: Fonts.sans,
+                  fontSize: 16,
+                  fontWeight: "600",
+                  color: colors.text,
+                }}
+              >
+                Reasoning Effort
+              </Text>
+              <Pressable
+                hitSlop={8}
+                onPress={() => setEffortPickerVisible(false)}
+              >
+                <Ionicons name="close" size={20} color={colors.muted} />
+              </Pressable>
+            </View>
+            {/* Default option */}
+            <Pressable
+              onPress={() => {
+                setSelectedVariant(null);
+                setEffortPickerVisible(false);
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                gap: 10,
+                backgroundColor:
+                  selectedVariant === null
+                    ? colors.surfaceSecondary
+                    : "transparent",
+              }}
+            >
+              <Ionicons
+                name="speedometer-outline"
+                size={16}
+                color={
+                  selectedVariant === null ? colors.accent : colors.muted
+                }
+              />
+              <Text
+                style={{
+                  flex: 1,
+                  fontFamily: Fonts.sans,
+                  fontSize: 14,
+                  color: colors.text,
+                  fontWeight: selectedVariant === null ? "600" : "400",
+                }}
+              >
+                Default
+              </Text>
+              {selectedVariant === null && (
+                <Ionicons
+                  name="checkmark"
+                  size={18}
+                  color={colors.accent}
+                />
+              )}
+            </Pressable>
+            {/* Variant options */}
+            {activeVariants.map((variant) => {
+              const isActive = selectedVariant === variant;
+              return (
+                <Pressable
+                  key={variant}
+                  onPress={() => {
+                    setSelectedVariant(variant);
+                    setEffortPickerVisible(false);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 16,
+                    paddingVertical: 14,
+                    gap: 10,
+                    backgroundColor: isActive
+                      ? colors.surfaceSecondary
+                      : "transparent",
+                  }}
+                >
+                  <Ionicons
+                    name="speedometer-outline"
+                    size={16}
+                    color={isActive ? colors.accent : colors.muted}
+                  />
+                  <Text
+                    style={{
+                      flex: 1,
+                      fontFamily: Fonts.sans,
+                      fontSize: 14,
+                      color: colors.text,
+                      fontWeight: isActive ? "600" : "400",
+                    }}
+                  >
+                    {capitalize(variant)}
+                  </Text>
+                  {isActive && (
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={colors.accent}
+                    />
+                  )}
+                </Pressable>
+              );
+            })}
           </Pressable>
         </Pressable>
       </Modal>
@@ -1021,7 +1316,6 @@ function ChangesTab({
   loading,
   refresh,
   colors,
-  colorScheme,
 }: {
   files: FileStatus[];
   loading: boolean;

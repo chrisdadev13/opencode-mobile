@@ -46,7 +46,7 @@ type ModelSelection = {
 type ProviderInfo = {
   id: string;
   name: string;
-  models: { id: string; name: string }[];
+  models: { id: string; name: string; variants: string[] }[];
 };
 
 type MessageWithParts = {
@@ -184,6 +184,7 @@ export function useProviders() {
               models: Object.values(p.models ?? {}).map((m: any) => ({
                 id: m.id,
                 name: m.name || m.id,
+                variants: Object.keys(m.variants ?? {}),
               })),
             })
           );
@@ -394,7 +395,7 @@ export function useSession(sessionId: string) {
 
   // --- Send message ---
   const sendMessage = useCallback(
-    async (text: string, model?: ModelSelection) => {
+    async (text: string, model?: ModelSelection, agent?: string, variant?: string) => {
       try {
         setSending(true);
         setError(null);
@@ -421,6 +422,8 @@ export function useSession(sessionId: string) {
           body: JSON.stringify({
             parts: [{ type: 'text', text }],
             ...(model && { model: { providerID: model.providerID, modelID: model.modelID } }),
+            ...(agent && { agent }),
+            ...(variant && { variant }),
           }),
           timeout: 60_000,
         });

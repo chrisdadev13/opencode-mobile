@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LeftSheet } from '@/components/left-sheet';
 import { Logo } from '@/components/logo';
-import { Colors, Fonts } from '@/constants/theme';
+import { Spinner } from '@/components/spinner';
+import { Colors, Fonts, blue } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useProjectInfo, useSessions, useSessionStatuses } from '@/hooks/use-opencode';
 import type { SessionStatus } from '@opencode-ai/sdk/client';
@@ -31,10 +32,11 @@ function formatTime(timestamp: number): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function getStatusIcon(status: SessionStatus | undefined): { name: string; color: string } | null {
-  if (!status || status.type === 'idle') return null; // rendered as a dash
-  if (status.type === 'busy') return { name: 'sync-circle', color: '#f59e0b' };
-  return { name: 'alert-circle', color: '#ef4444' };
+function getStatusColor(isDark: boolean): { busy: string; error: string } {
+  return {
+    busy: (isDark ? blue.dark : blue.light)[8],
+    error: '#ef4444',
+  };
 }
 
 function getTimeGroup(timestamp: number): string {
@@ -87,17 +89,19 @@ function groupByTime(sessions: Session[]): GroupedSessions {
   return order.filter((g) => map.has(g)).map((g) => ({ label: g, sessions: map.get(g)! }));
 }
 
-function SessionStatusIcon({ status }: { status: SessionStatus | undefined }) {
-  const icon = getStatusIcon(status);
-  if (!icon) {
-    // Idle: render a small muted dash
+function SessionStatusIcon({ status, isDark }: { status: SessionStatus | undefined; isDark: boolean }) {
+  const statusColors = getStatusColor(isDark);
+  if (!status || status.type === 'idle') {
     return (
       <View style={{ width: 14, height: 14, alignItems: 'center', justifyContent: 'center' }}>
         <View style={{ width: 10, height: 2, borderRadius: 1, backgroundColor: '#d4d4d4' }} />
       </View>
     );
   }
-  return <Ionicons name={icon.name as any} size={14} color={icon.color} />;
+  if (status.type === 'busy') {
+    return <Spinner size={14} color={statusColors.busy} />;
+  }
+  return <Ionicons name="alert-circle" size={14} color={statusColors.error} />;
 }
 
 export default function HomeScreen() {
@@ -251,7 +255,7 @@ export default function HomeScreen() {
                       onLongPress={() => setDeleteTarget({ id: session.id, title: session.title || 'Untitled' })}>
                       <View className="flex-row items-center justify-between">
                         <View className="flex-row items-center flex-1" style={{ gap: 8 }}>
-                          <SessionStatusIcon status={sessionStatus} />
+                          <SessionStatusIcon status={sessionStatus} isDark={colorScheme === 'dark'} />
                           <Text
                             className="text-foreground text-sm flex-1"
                             style={{ fontFamily: Fonts.sans }}
@@ -388,7 +392,7 @@ export default function HomeScreen() {
                           router.push(`/session/${session.id}`);
                         }}>
                         <View className="flex-row items-center" style={{ gap: 8 }}>
-                          <SessionStatusIcon status={sessionStatus} />
+                          <SessionStatusIcon status={sessionStatus} isDark={colorScheme === 'dark'} />
                           <Text
                             className="text-foreground text-sm flex-1"
                             style={{ fontFamily: Fonts.sans }}
