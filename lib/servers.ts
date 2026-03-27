@@ -1,4 +1,6 @@
-import { getDB } from './db';
+import * as SecureStore from 'expo-secure-store';
+
+const SERVERS_KEY = 'servers';
 
 export type Server = {
   id: number;
@@ -8,45 +10,64 @@ export type Server = {
   last_used_at: string;
 };
 
-type ServerRow = {
-  id: number;
-  url: string;
-  label: string | null;
-  created_at: string;
-  last_used_at: string;
-};
+function readServers(): Server[] {
+  const raw = SecureStore.getItem(SERVERS_KEY);
+  if (!raw) return [];
+  return JSON.parse(raw) as Server[];
+}
+
+function writeServers(servers: Server[]): void {
+  SecureStore.setItem(SERVERS_KEY, JSON.stringify(servers));
+}
+
+let nextId = 0;
+
+function getNextId(servers: Server[]): number {
+  if (nextId === 0 && servers.length > 0) {
+    nextId = Math.max(...servers.map((s) => s.id));
+  }
+  nextId += 1;
+  return nextId;
+}
 
 export function getServers(): Server[] {
-  const db = getDB();
-  const result = db.execute<ServerRow>('SELECT * FROM servers ORDER BY last_used_at DESC');
-  return result.rows._array;
+  return readServers().sort(
+    (a, b) => new Date(b.last_used_at).getTime() - new Date(a.last_used_at).getTime()
+  );
 }
 
 export function getLastUsedServer(): Server | null {
-  const servers = getServers();
-  return servers[0] ?? null;
+  return getServers()[0] ?? null;
 }
 
 export function addServer(url: string, label?: string): Server {
-  const db = getDB();
-  const result = db.execute<ServerRow>(
-    'INSERT INTO servers (url, label) VALUES (?, ?) RETURNING *',
-    [url, label ?? null]
-  );
-  return result.rows._array[0]!;
+  const servers = readServers();
+  const now = new Date().toISOString();
+  const server: Server = {
+    id: getNextId(servers),
+    url,
+    label: label ?? null,
+    created_at: now,
+    last_used_at: now,
+  };
+  servers.push(server);
+  writeServers(servers);
+  return server;
 }
 
 export function updateServerLastUsed(id: number): void {
-  const db = getDB();
-  db.execute("UPDATE servers SET last_used_at = datetime('now') WHERE id = ?", [id]);
+  const servers = readServers();
+  const server = servers.find((s) => s.id === id);
+  if (server) {
+    server.last_used_at = new Date().toISOString();
+    writeServers(servers);
+  }
 }
 
 export function removeServer(id: number): void {
-  const db = getDB();
-  db.execute('DELETE FROM servers WHERE id = ?', [id]);
+  writeServers(readServers().filter((s) => s.id !== id));
 }
 
 export function clearAllServers(): void {
-  const db = getDB();
-  db.execute('DELETE FROM servers');
+  SecureStore.deleteItemAsync(SERVERS_KEY);
 }
