@@ -10,17 +10,11 @@ import type {
 } from '@opencode-ai/sdk/v2/client';
 import { useFocusEffect } from 'expo-router';
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
-import { getClient, getServerUrl, fetchWithTimeout } from '@/lib/opencode';
+import { getClient } from '@/lib/opencode';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function isAbortError(e: unknown): boolean {
-  if (e instanceof DOMException && e.name === 'AbortError') return true;
-  const msg = (e as Error)?.message ?? '';
-  return msg === 'Aborted' || msg.includes('aborted');
-}
 
 function generateSessionName(seed: string): string {
   return uniqueNamesGenerator({
@@ -68,12 +62,10 @@ export function useSessionStatuses() {
 
   const fetchStatuses = useCallback(async () => {
     try {
-      const baseUrl = getServerUrl();
-      const res = await fetchWithTimeout(`${baseUrl}/session/status`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        setStatuses(data as Record<string, SessionStatus>);
+      const client = getClient();
+      const res = await client.session.status();
+      if (res.data) {
+        setStatuses(res.data as Record<string, SessionStatus>);
       }
     } catch {
       // retry next interval
@@ -110,12 +102,11 @@ export function useSessions() {
     if (!hasLoaded.current) setLoading(true);
     try {
       setError(null);
-      const baseUrl = getServerUrl();
-      const res = await fetchWithTimeout(`${baseUrl}/session`);
-      if (!res.ok) { setError('Failed to load sessions'); return; }
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setSessions(data.map((s: Session) => ({ ...s, title: resolveTitle(s) })));
+      const client = getClient();
+      const res = await client.session.list();
+      if (res.error) { setError('Failed to load sessions'); return; }
+      if (Array.isArray(res.data)) {
+        setSessions(res.data.map((s: Session) => ({ ...s, title: resolveTitle(s) })));
         hasLoaded.current = true;
       }
     } catch (e) {
@@ -133,15 +124,10 @@ export function useSessions() {
 
   const create = useCallback(async (title?: string) => {
     try {
-      const baseUrl = getServerUrl();
-      const res = await fetchWithTimeout(`${baseUrl}/session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const session = { ...data, title: resolveTitle(data) } as Session;
+      const client = getClient();
+      const res = await client.session.create({ title });
+      if (res.error || !res.data) return null;
+      const session = { ...res.data, title: resolveTitle(res.data) } as Session;
       setSessions((prev) => [session, ...prev]);
       return session;
     } catch (e) {
@@ -152,9 +138,9 @@ export function useSessions() {
 
   const remove = useCallback(async (id: string) => {
     try {
-      const baseUrl = getServerUrl();
-      const res = await fetchWithTimeout(`${baseUrl}/session/${id}`, { method: 'DELETE' });
-      if (!res.ok) { setError('Failed to delete session'); return; }
+      const client = getClient();
+      const res = await client.session.delete({ sessionID: id });
+      if (res.error) { setError('Failed to delete session'); return; }
       setSessions((prev) => prev.filter((s) => s.id !== id));
     } catch (e) {
       setError((e as Error).message);
@@ -234,14 +220,9 @@ export function useSession(sessionId: string) {
   // --- Fetch session title ---
   const fetchTitle = useCallback(async () => {
     try {
-      const baseUrl = getServerUrl();
-      const res = await fetchWithTimeout(`${baseUrl}/session`);
-      if (!res.ok) return;
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        const session = data.find((s: Session) => s.id === sessionId);
-        if (session) setTitle(resolveTitle(session));
-      }
+      const client = getClient();
+      const res = await client.session.get({ sessionID: sessionId });
+      if (res.data) setTitle(resolveTitle(res.data as Session));
     } catch {
       // ignore
     }
@@ -253,12 +234,10 @@ export function useSession(sessionId: string) {
   useEffect(() => {
     async function fetchStatus() {
       try {
-        const baseUrl = getServerUrl();
-        const res = await fetchWithTimeout(`${baseUrl}/session/status`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data?.[sessionId]) {
-          setSessionStatus(data[sessionId] as SessionStatus);
+        const client = getClient();
+        const res = await client.session.status();
+        if (res.data?.[sessionId]) {
+          setSessionStatus(res.data[sessionId] as SessionStatus);
         }
       } catch {
         // ignore
@@ -276,17 +255,12 @@ export function useSession(sessionId: string) {
     if (!hasLoadedMessages.current) setLoading(true);
     try {
       setError(null);
-      const baseUrl = getServerUrl();
-      const res = await fetchWithTimeout(`${baseUrl}/session/${sessionId}/message`);
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        const normalized: MessageWithParts[] = data
-          .map((msg: any) => {
-            if (msg.info) return { info: msg.info as Message, parts: msg.parts ?? [] };
-            const { parts, ...info } = msg;
-            return { info: info as Message, parts: parts ?? [] };
-          })
-          .filter((msg) => msg.info?.role);
+      const client = getClient();
+      const res = await client.session.messages({ sessionID: sessionId });
+      if (Array.isArray(res.data)) {
+        const normalized: MessageWithParts[] = res.data
+          .filter((msg) => msg.info?.role)
+          .map((msg) => ({ info: msg.info as Message, parts: msg.parts ?? [] }));
         setMessages(normalized);
         hasLoadedMessages.current = true;
       }
@@ -326,11 +300,9 @@ export function useSession(sessionId: string) {
     // Also refresh status
     (async () => {
       try {
-        const baseUrl = getServerUrl();
-        const res = await fetchWithTimeout(`${baseUrl}/session/status`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data?.[sessionId]) setSessionStatus(data[sessionId] as SessionStatus);
+        const client = getClient();
+        const res = await client.session.status();
+        if (res.data?.[sessionId]) setSessionStatus(res.data[sessionId] as SessionStatus);
       } catch { /* ignore */ }
     })();
   }, [loadMessages, fetchPendingInteractions, sessionId]));
@@ -476,23 +448,19 @@ export function useSession(sessionId: string) {
         };
         setMessages((prev) => [...prev, userMsg]);
 
-        const baseUrl = getServerUrl();
-        const res = await fetchWithTimeout(`${baseUrl}/session/${sessionId}/message`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            parts: [{ type: 'text', text }],
-            ...(model && { model: { providerID: model.providerID, modelID: model.modelID } }),
-            ...(agent && { agent }),
-            ...(variant && { variant }),
-          }),
-          timeout: 60_000,
+        const client = getClient();
+        const res = await client.session.promptAsync({
+          sessionID: sessionId,
+          parts: [{ type: 'text', text }],
+          ...(model && { model: { providerID: model.providerID, modelID: model.modelID } }),
+          ...(agent && { agent }),
+          ...(variant && { variant }),
         });
-        const data = await res.json();
 
-        if (!res.ok) {
+        if (res.error) {
+          const errData = res.error as any;
           const errMsg: string =
-            data?.data?.message || data?.error?.message || 'Failed to send message';
+            errData?.data?.message || errData?.errors?.[0]?.message || 'Failed to send message';
           if (errMsg.toLowerCase().includes('busy')) {
             setMessages((prev) => prev.filter((m) => m.info.id !== tempId));
             setError('Session is busy — please wait');
@@ -501,23 +469,7 @@ export function useSession(sessionId: string) {
           }
           return;
         }
-
-        // Normalize response
-        const responseInfo: Message = data.info ?? (() => { const { parts: _, ...r } = data; return r; })();
-        const responseParts: Part[] = data.parts ?? [];
-
-        // Merge — SSE may have already streamed parts
-        setMessages((prev) => {
-          const idx = prev.findIndex((m) => m.info.id === responseInfo.id);
-          if (idx >= 0) {
-            const existing = prev[idx]!;
-            const merged = existing.parts.length >= responseParts.length ? existing.parts : responseParts;
-            const updated = [...prev];
-            updated[idx] = { info: { ...existing.info, ...responseInfo } as Message, parts: merged };
-            return updated;
-          }
-          return [...prev, { info: responseInfo, parts: responseParts }];
-        });
+        // SSE handles streaming the assistant response
       } catch (e) {
         setError((e as Error).message);
       } finally {
@@ -639,10 +591,9 @@ export function useFileStatus() {
   const refresh = useCallback(async () => {
     try {
       setLoading(true);
-      const baseUrl = getServerUrl();
-      const res = await fetchWithTimeout(`${baseUrl}/file/status`);
-      const data = await res.json();
-      if (Array.isArray(data)) setFiles(data);
+      const client = getClient();
+      const res = await client.file.status();
+      if (Array.isArray(res.data)) setFiles(res.data);
     } catch {
       // ignore
     } finally {
