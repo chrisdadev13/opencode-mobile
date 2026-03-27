@@ -1,0 +1,23 @@
+hooks/use-opencode.ts
+  60cb680a6ae32601 13,65-68,105-109,127-130,141-143,223-225,237-240,258-263,303-305,451-457,460-461,463,472,594-596
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.19",
+  "base_commit_sha": "ede178016a4deffdb3bab26491ca647df9412169",
+  "prompts": {
+    "60cb680a6ae32601": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ce2c1ae-39c8-4fa2-a790-1172c5c2de30",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 47,
+      "total_deletions": 96,
+      "accepted_lines": 47,
+      "overriden_lines": 0
+    }
+  }
+}
