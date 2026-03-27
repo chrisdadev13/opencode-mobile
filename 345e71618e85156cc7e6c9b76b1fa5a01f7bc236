@@ -1,0 +1,36 @@
+lib/servers.ts
+  f2f46eedbbdada5b 1,3,13-21,23-31,34-36,40,44-55,59-64,68,72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.19",
+  "base_commit_sha": "345e71618e85156cc7e6c9b76b1fa5a01f7bc236",
+  "prompts": {
+    "4a234258102b729a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "125c083e-96c8-4a81-8d16-0eab2d94f5cc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 134,
+      "total_deletions": 182,
+      "accepted_lines": 115,
+      "overriden_lines": 0
+    },
+    "f2f46eedbbdada5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cde3cfae-8c88-4474-9aba-cbd62271eeef",
+        "model": "<synthetic>"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 46,
+      "total_deletions": 25,
+      "accepted_lines": 46,
+      "overriden_lines": 0
+    }
+  }
+}
