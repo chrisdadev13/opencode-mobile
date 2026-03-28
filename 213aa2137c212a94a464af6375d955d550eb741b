@@ -1,0 +1,25 @@
+app/_layout.tsx
+  11a18e27bf950d95 6,59-67
+app/session/[id].tsx
+  11a18e27bf950d95 20,270-271,498
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "213aa2137c212a94a464af6375d955d550eb741b",
+  "prompts": {
+    "11a18e27bf950d95": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "08dd406b-5c38-4dd6-b231-251bf2bd18bb",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 47,
+      "total_deletions": 70,
+      "accepted_lines": 16,
+      "overriden_lines": 0
+    }
+  }
+}
