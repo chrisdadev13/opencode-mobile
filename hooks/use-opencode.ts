@@ -649,8 +649,10 @@ export function useSession(sessionId: string) {
           return prev;
         });
 
-        // Optimistically show busy
+        // Optimistically show busy & pause background polling so a stale
+        // poll can't overwrite the optimistic status before the server acks.
         setSessionStatus({ type: 'busy' });
+        stopPolling();
 
         const client = getClient();
         console.log('[Send] calling promptAsync...');
@@ -673,6 +675,8 @@ export function useSession(sessionId: string) {
           } else {
             setError(errMsg);
           }
+          // Restart idle polling since we stopped it before promptAsync
+          pollRef.current = setInterval(pollOnce, 5000);
           return;
         }
 
@@ -681,11 +685,13 @@ export function useSession(sessionId: string) {
         startFastPolling();
       } catch (e) {
         setError((e as Error).message);
+        // Restart idle polling since we stopped it before promptAsync
+        pollRef.current = setInterval(pollOnce, 5000);
       } finally {
         setSending(false);
       }
     },
-    [sessionId, startFastPolling]
+    [sessionId, startFastPolling, stopPolling, pollOnce]
   );
 
   const abort = useCallback(async () => {
