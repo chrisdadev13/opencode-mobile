@@ -1,0 +1,89 @@
+hooks/use-opencode.ts
+  a52feec3cd673456 757-804
+  a69a5e82f97407ed 94-95,109,121,135,144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "776e4e0592f96d7e2ef40141957b29e55a422654",
+  "prompts": {
+    "1cde17f817514d06": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "189fb0c2-311e-46dd-8378-3209639f60f6",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 42,
+      "overriden_lines": 0
+    },
+    "20cf2edbeaf5ebce": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "45dc27b7-494d-424b-a801-7c71d99b61fc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 19,
+      "overriden_lines": 0
+    },
+    "45fbcdec5ea9854f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f6b37cb-4606-40fd-808e-0fc4cffdee63",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "6d3b2b61ee8290a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "77db6367-e5b8-46f3-bec0-6fe9f4b4024a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    },
+    "a52feec3cd673456": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe86d8f3-c181-460b-967f-d987d6a82ea3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 868,
+      "overriden_lines": 0
+    },
+    "a69a5e82f97407ed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "82de6f96-3614-466a-ac46-d3d4a692a67e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    }
+  }
+}
