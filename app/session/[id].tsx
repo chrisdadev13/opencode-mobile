@@ -9,6 +9,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -167,6 +168,26 @@ export default function SessionScreen() {
   const [activeAgent, setActiveAgent] = useState<"build" | "plan">("build");
   const [agentPickerVisible, setAgentPickerVisible] = useState(false);
   const prevMessageCount = useRef(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setKeyboardVisible(true);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const {
     messages,
@@ -201,7 +222,7 @@ export default function SessionScreen() {
   // Use selected model, fall back to default from provider config
   const activeModel = selectedModel ?? defaultModel;
 
-  const isBusy = sessionStatus.type === "busy" || sending;
+  const isBusy = sessionStatus.type === "busy";
 
   // Flatten all provider models into a single list for the picker
   const allModels = useMemo(
@@ -496,7 +517,11 @@ export default function SessionScreen() {
             {/* Input area */}
             <View
               className="px-3 pt-2 mb-0"
-              style={{ paddingBottom: Math.max(insets.bottom, 18) }}
+              style={{
+                paddingBottom: keyboardVisible
+                  ? 4
+                  : Math.max(insets.bottom, 18),
+              }}
             >
               {/* Input card */}
               <View className="bg-surface rounded-4xl border border-border z-50">
@@ -514,7 +539,7 @@ export default function SessionScreen() {
                     paddingHorizontal: 12,
                     minHeight: 100,
                     paddingTop: 12,
-                    paddingBottom: 44,
+                    paddingBottom: 12,
                     maxHeight: 180,
                     textAlignVertical: "top",
                   }}
@@ -582,7 +607,7 @@ export default function SessionScreen() {
 
               {/* Toolbar tray */}
               <View
-                className="flex-row items-center px-1 pb-2 bg-background rounded-b-4xl border-x border-b border-border -mt-3 z-0"
+                className="flex-row items-center px-1 pb-2 bg-background rounded-b-4xl border-x border-b border-border/70 -mt-3 z-0"
                 style={{ gap: 6, paddingTop: 18 }}
               >
                 <Pressable
