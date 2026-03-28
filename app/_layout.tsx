@@ -55,7 +55,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? OpenCodeDark : OpenCodeLight}>
         <HeroUINativeProvider>
-          <Stack>
+          <Stack screenOptions={{ contentStyle: { backgroundColor: colorScheme === 'dark' ? Colors.dark.background : Colors.light.background } }}>
             <Stack.Screen name="connect" options={{ headerShown: false }} />
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="session/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
