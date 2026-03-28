@@ -1,0 +1,153 @@
+components/chat/use-colors.ts
+  80bec04737c364f0 1-9
+components/chat/chat-utils.ts
+  80bec04737c364f0 1-122
+components/chat/permission-card.tsx
+  80bec04737c364f0 1-162
+components/chat/index.ts
+  80bec04737c364f0 1-16
+components/chat/session-header.tsx
+  80bec04737c364f0 1-206
+components/chat/changes-tab.tsx
+  80bec04737c364f0 1-144
+components/chat/thinking-shimmer.tsx
+  80bec04737c364f0 1-78
+app/session/[id].tsx
+  8bc7206d75f8317c 30-34,154-163
+  80bec04737c364f0 3,7-21,36,39-40,44,46-51,142-146,148-153,164-166,170,195,197,207,216,226,228,230,244-258,264-265,267-268,270-287,290-295,298-301,304,307-308,310-314,316-329,331-333,335-339,341-347,350-358,360-363
+app/sessions.tsx
+  8bc7206d75f8317c 1-595
+app/index.tsx
+  8bc7206d75f8317c 3,18,25,27-28,30-31,33-34,39-42,44,47-50,64-65,69,74-75,79-93,95,97-99,102,104-115,117-118,121-123,125-139,141-166,168,171-172,174,178,180,183-186,189,192-204,207-209,211-212,216,221
+  a52feec3cd673456 15,17
+  1cde17f817514d06 96
+components/chat/use-markdown-styles.ts
+  80bec04737c364f0 1-138
+components/chat/input-toolbar.tsx
+  80bec04737c364f0 1-84
+components/chat/empty-state.tsx
+  80bec04737c364f0 1-64
+components/chat/message-parts.tsx
+  80bec04737c364f0 1-328
+components/chat/chat-input.tsx
+  80bec04737c364f0 1-100
+components/chat/picker-modal.tsx
+  80bec04737c364f0 1-168
+components/chat/message-bubble.tsx
+  80bec04737c364f0 1-104
+app/_layout.tsx
+  8bc7206d75f8317c 63
+components/chat/question-card.tsx
+  80bec04737c364f0 1-263
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "edd83740f7fdc153879e11b3c8ce017d2381495e",
+  "prompts": {
+    "1cde17f817514d06": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "189fb0c2-311e-46dd-8378-3209639f60f6",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    },
+    "20cf2edbeaf5ebce": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "45dc27b7-494d-424b-a801-7c71d99b61fc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    },
+    "45fbcdec5ea9854f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3f6b37cb-4606-40fd-808e-0fc4cffdee63",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "6d3b2b61ee8290a5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "77db6367-e5b8-46f3-bec0-6fe9f4b4024a",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    },
+    "80bec04737c364f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e7617e69-5c6b-4eef-9f37-884870008f21",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2136,
+      "total_deletions": 2084,
+      "accepted_lines": 2133,
+      "overriden_lines": 0
+    },
+    "8bc7206d75f8317c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "63d61e86-04f6-4657-a9d0-81f023ac13f4",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1075,
+      "total_deletions": 461,
+      "accepted_lines": 807,
+      "overriden_lines": 5
+    },
+    "a52feec3cd673456": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe86d8f3-c181-460b-967f-d987d6a82ea3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 753,
+      "overriden_lines": 1
+    },
+    "a69a5e82f97407ed": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "82de6f96-3614-466a-ac46-d3d4a692a67e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    }
+  }
+}
