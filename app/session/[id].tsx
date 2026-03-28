@@ -495,11 +495,11 @@ export default function SessionScreen() {
 
             {/* Input area */}
             <View
-              className="px-3 pt-2 mb-2"
+              className="px-3 pt-2 mb-0"
               style={{ paddingBottom: Math.max(insets.bottom, 18) }}
             >
               {/* Input card */}
-              <View className="bg-surface rounded-4xl border border-[#C1C0C0] z-50">
+              <View className="bg-surface rounded-4xl border border-border z-50">
                 <TextInput
                   placeholder="Ask anything..."
                   placeholderTextColor={colors.muted}
@@ -582,7 +582,7 @@ export default function SessionScreen() {
 
               {/* Toolbar tray */}
               <View
-                className="flex-row items-center px-1 pb-2 bg-[#F8F8F8] rounded-b-4xl border-x border-b border-[#DBDBDB] -mt-3 z-0"
+                className="flex-row items-center px-1 pb-2 bg-background rounded-b-4xl border-x border-b border-border -mt-3 z-0"
                 style={{ gap: 6, paddingTop: 18 }}
               >
                 <Pressable
@@ -1052,7 +1052,6 @@ export default function SessionScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-
     </KeyboardAvoidingView>
   );
 }
@@ -1278,7 +1277,12 @@ function QuestionCard({
       }}
     >
       {question.questions.map((q, qIdx) => (
-        <View key={qIdx} style={{ marginBottom: qIdx < question.questions.length - 1 ? 16 : 0 }}>
+        <View
+          key={qIdx}
+          style={{
+            marginBottom: qIdx < question.questions.length - 1 ? 16 : 0,
+          }}
+        >
           {/* Header */}
           <Text
             style={{
@@ -1696,7 +1700,7 @@ function MessageBubble({
         <View
           className={`rounded-xl px-3 py-2 ${
             isUser
-              ? "bg-accent-foreground border border-[#DBDBDB]"
+              ? "bg-accent-foreground border border-border"
               : "bg-transparent"
           }`}
         >

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   Session,
   Message,
@@ -9,8 +9,10 @@ import type {
   QuestionAnswer,
 } from '@opencode-ai/sdk/v2/client';
 import { useFocusEffect } from 'expo-router';
+import { AppState } from 'react-native';
+import EventSource from 'react-native-sse';
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
-import { getClient } from '@/lib/opencode';
+import { getClient, getServerUrl } from '@/lib/opencode';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -119,8 +121,12 @@ export function useSessions() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // Silently refetch when screen gains focus
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  // Poll session list every 5s while screen is focused
+  useFocusEffect(useCallback(() => {
+    refresh();
+    const id = setInterval(refresh, 5_000);
+    return () => clearInterval(id);
+  }, [refresh]));
 
   const create = useCallback(async (title?: string) => {
     try {
@@ -216,6 +222,32 @@ export function useSession(sessionId: string) {
   const [title, setTitle] = useState<string>('');
   const [pendingPermission, setPendingPermission] = useState<PermissionRequest | null>(null);
   const [pendingQuestion, setPendingQuestion] = useState<QuestionRequest | null>(null);
+  const [pendingUserMsg, setPendingUserMsg] = useState<MessageWithParts | null>(null);
+
+  // Derived messages: server data + optimistic pending message (if not yet confirmed)
+  const displayMessages = useMemo(() => {
+    if (!pendingUserMsg) return messages;
+    const pendingText = pendingUserMsg.parts.find((p) => p.type === 'text')?.text;
+    const alreadyInServer = messages.some(
+      (m) =>
+        m.info.role === 'user' &&
+        m.parts.some((p) => p.type === 'text' && p.text === pendingText),
+    );
+    if (alreadyInServer) return messages;
+    return [...messages, pendingUserMsg];
+  }, [messages, pendingUserMsg]);
+
+  // Clear pending message once server confirms it
+  useEffect(() => {
+    if (!pendingUserMsg) return;
+    const pendingText = pendingUserMsg.parts.find((p) => p.type === 'text')?.text;
+    const confirmed = messages.some(
+      (m) =>
+        m.info.role === 'user' &&
+        m.parts.some((p) => p.type === 'text' && p.text === pendingText),
+    );
+    if (confirmed) setPendingUserMsg(null);
+  }, [messages, pendingUserMsg]);
 
   // --- Fetch session title ---
   const fetchTitle = useCallback(async () => {
@@ -307,124 +339,288 @@ export function useSession(sessionId: string) {
     })();
   }, [loadMessages, fetchPendingInteractions, sessionId]));
 
-  // --- SSE for real-time updates ---
+  // --- SSE via react-native-sse (native EventSource) ---
+  // The SDK's fetch-based SSE is broken on React Native because Hermes
+  // doesn't support TextDecoderStream / Web Streams API. This uses
+  // native HTTP streaming (NSURLSession on iOS, OkHttp on Android).
+  const sseAlive = useRef(false);
+
   useEffect(() => {
+    let es: EventSource | null = null;
     let cancelled = false;
+    let heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let retryDelay = 1000;
+    let wasConnected = false; // only re-fetch after a real connection drops
+    const HEARTBEAT_TIMEOUT = 15_000;
+    const MAX_RETRY_DELAY = 30_000;
 
-    async function subscribe() {
-      try {
-        const client = getClient();
-        const result = await client.event.subscribe();
-        if (!result.stream) return;
+    function resetHeartbeat() {
+      if (heartbeatTimer) clearTimeout(heartbeatTimer);
+      heartbeatTimer = setTimeout(() => {
+        console.log('[SSE] heartbeat timeout, reconnecting...');
+        scheduleReconnect();
+      }, HEARTBEAT_TIMEOUT);
+    }
 
-        for await (const event of result.stream) {
-          if (cancelled) break;
-          const evt = event as any;
+    function handleEvent(evt: { type: string; properties?: any }) {
+      sseAlive.current = true;
+      resetHeartbeat();
 
-          // Message info updated
-          if (
-            evt.type === 'message.updated' &&
-            evt.properties?.info?.sessionID === sessionId
-          ) {
-            const info = evt.properties.info as Message;
-            setMessages((prev) => {
-              const idx = prev.findIndex((m) => m.info.id === info.id);
-              if (idx >= 0) {
-                const updated = [...prev];
-                updated[idx] = { ...updated[idx]!, info, parts: updated[idx]!.parts };
-                return updated;
-              }
-              return [...prev, { info, parts: [] }];
-            });
+      // Message info updated
+      if (
+        evt.type === 'message.updated' &&
+        evt.properties?.info?.sessionID === sessionId
+      ) {
+        const info = evt.properties.info as Message;
+        setMessages((prev) => {
+          const idx = prev.findIndex((m) => m.info.id === info.id);
+          if (idx >= 0) {
+            const updated = [...prev];
+            updated[idx] = { ...updated[idx]!, info, parts: updated[idx]!.parts };
+            return updated;
+          }
+          return [...prev, { info, parts: [] }];
+        });
 
-            // Re-fetch title after the first assistant message arrives
-            // (the server generates the title after the first reply)
-            if (info.role === 'assistant' && !hasFetchedTitleAfterReply.current) {
-              hasFetchedTitleAfterReply.current = true;
-              // Small delay to let the server finalize the title
-              setTimeout(() => fetchTitle(), 1000);
-            }
-          }
-
-          // Message part updated
-          if (
-            evt.type === 'message.part.updated' &&
-            evt.properties?.part?.sessionID === sessionId
-          ) {
-            const part = evt.properties.part as Part;
-            setMessages((prev) => {
-              const idx = prev.findIndex((m) => m.info.id === part.messageID);
-              if (idx >= 0) {
-                const updated = [...prev];
-                const msg = updated[idx]!;
-                const partIdx = msg.parts.findIndex((p) => p.id === part.id);
-                if (partIdx >= 0) {
-                  const newParts = [...msg.parts];
-                  newParts[partIdx] = part;
-                  updated[idx] = { ...msg, parts: newParts };
-                } else {
-                  updated[idx] = { ...msg, parts: [...msg.parts, part] };
-                }
-                return updated;
-              }
-              return [
-                ...prev,
-                {
-                  info: {
-                    id: part.messageID,
-                    sessionID: sessionId,
-                    role: 'assistant' as const,
-                    time: { created: Date.now() / 1000 },
-                    agent: '',
-                    parentID: '',
-                    modelID: '',
-                    providerID: '',
-                    mode: '',
-                    path: { cwd: '', root: '' },
-                    cost: 0,
-                    tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
-                  },
-                  parts: [part],
-                },
-              ];
-            });
-          }
-
-          // Session status
-          if (evt.type === 'session.status' && evt.properties?.sessionID === sessionId) {
-            setSessionStatus(evt.properties.status as SessionStatus);
-          }
-          if (evt.type === 'session.idle' && evt.properties?.sessionID === sessionId) {
-            setSessionStatus({ type: 'idle' });
-          }
-
-          // Permission requests
-          if (evt.type === 'permission.asked' && evt.properties?.sessionID === sessionId) {
-            setPendingPermission(evt.properties as PermissionRequest);
-          }
-          if (evt.type === 'permission.replied' && evt.properties?.sessionID === sessionId) {
-            setPendingPermission(null);
-          }
-
-          // Question requests
-          if (evt.type === 'question.asked' && evt.properties?.sessionID === sessionId) {
-            setPendingQuestion(evt.properties as QuestionRequest);
-          }
-          if (
-            (evt.type === 'question.replied' || evt.type === 'question.rejected') &&
-            evt.properties?.sessionID === sessionId
-          ) {
-            setPendingQuestion(null);
-          }
+        if (info.role === 'assistant' && !hasFetchedTitleAfterReply.current) {
+          hasFetchedTitleAfterReply.current = true;
+          setTimeout(() => fetchTitle(), 1000);
         }
-      } catch {
-        // stream ended
+      }
+
+      // Message part updated
+      if (
+        evt.type === 'message.part.updated' &&
+        evt.properties?.part?.sessionID === sessionId
+      ) {
+        const part = evt.properties.part as Part;
+        setMessages((prev) => {
+          const idx = prev.findIndex((m) => m.info.id === part.messageID);
+          if (idx >= 0) {
+            const updated = [...prev];
+            const msg = updated[idx]!;
+            const partIdx = msg.parts.findIndex((p) => p.id === part.id);
+            if (partIdx >= 0) {
+              const newParts = [...msg.parts];
+              newParts[partIdx] = part;
+              updated[idx] = { ...msg, parts: newParts };
+            } else {
+              updated[idx] = { ...msg, parts: [...msg.parts, part] };
+            }
+            return updated;
+          }
+          return [
+            ...prev,
+            {
+              info: {
+                id: part.messageID,
+                sessionID: sessionId,
+                role: 'assistant' as const,
+                time: { created: Date.now() / 1000 },
+                agent: '',
+                parentID: '',
+                modelID: '',
+                providerID: '',
+                mode: '',
+                path: { cwd: '', root: '' },
+                cost: 0,
+                tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
+              },
+              parts: [part],
+            },
+          ];
+        });
+      }
+
+      // Session status
+      if (evt.type === 'session.status' && evt.properties?.sessionID === sessionId) {
+        setSessionStatus(evt.properties.status as SessionStatus);
+      }
+      if (evt.type === 'session.idle' && evt.properties?.sessionID === sessionId) {
+        setSessionStatus({ type: 'idle' });
+      }
+
+      // Permission requests
+      if (evt.type === 'permission.asked' && evt.properties?.sessionID === sessionId) {
+        setPendingPermission(evt.properties as PermissionRequest);
+      }
+      if (evt.type === 'permission.replied' && evt.properties?.sessionID === sessionId) {
+        setPendingPermission(null);
+      }
+
+      // Question requests
+      if (evt.type === 'question.asked' && evt.properties?.sessionID === sessionId) {
+        setPendingQuestion(evt.properties as QuestionRequest);
+      }
+      if (
+        (evt.type === 'question.replied' || evt.type === 'question.rejected') &&
+        evt.properties?.sessionID === sessionId
+      ) {
+        setPendingQuestion(null);
       }
     }
 
-    subscribe();
-    return () => { cancelled = true; };
-  }, [sessionId, fetchTitle]);
+    function connect() {
+      if (cancelled) return;
+      if (es) { es.close(); es = null; }
+
+      const url = `${getServerUrl()}/event`;
+      console.log('[SSE] connecting to', url);
+
+      es = new EventSource(url, { headers: { Accept: 'text/event-stream' } });
+
+      es.addEventListener('open', () => {
+        console.log('[SSE] connected');
+        sseAlive.current = true;
+        wasConnected = true;
+        retryDelay = 1000; // reset backoff on success
+        resetHeartbeat();
+      });
+
+      es.addEventListener('message', (event) => {
+        if (!event.data) return;
+        try {
+          const parsed = JSON.parse(event.data);
+          handleEvent(parsed);
+        } catch (e) {
+          console.warn('[SSE] parse error:', e);
+        }
+      });
+
+      es.addEventListener('error', (event) => {
+        console.warn('[SSE] error:', event);
+        sseAlive.current = false;
+        scheduleReconnect();
+      });
+
+      es.addEventListener('close', () => {
+        console.log('[SSE] closed');
+        sseAlive.current = false;
+        scheduleReconnect();
+      });
+    }
+
+    function scheduleReconnect() {
+      if (cancelled) return;
+      if (es) { es.close(); es = null; }
+      if (reconnectTimer) return; // already scheduled
+
+      // Only re-fetch if we had a working connection that dropped
+      if (wasConnected) {
+        wasConnected = false;
+        loadMessages();
+        fetchPendingInteractions();
+      }
+
+      console.log(`[SSE] reconnecting in ${retryDelay}ms...`);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connect();
+      }, retryDelay);
+      retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY);
+    }
+
+    // Reconnect when app returns to foreground
+    const appStateListener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        console.log('[SSE] app foregrounded, reconnecting');
+        retryDelay = 1000; // reset backoff
+        wasConnected = true; // force re-fetch
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        scheduleReconnect();
+      }
+    });
+
+    connect();
+
+    return () => {
+      cancelled = true;
+      if (heartbeatTimer) clearTimeout(heartbeatTimer);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (es) { es.close(); es = null; }
+      sseAlive.current = false;
+      appStateListener.remove();
+    };
+  }, [sessionId, fetchTitle, loadMessages, fetchPendingInteractions]);
+
+  // --- Polling fallback: catches anything SSE misses ---
+  // Slow poll (5s) while idle, fast poll (2s) after sending a message.
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sawBusy = useRef(false);
+  const messageCountAtSend = useRef(0);
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  const pollOnce = useCallback(async () => {
+    try {
+      const client = getClient();
+      // Fetch status + messages + interactions all in parallel
+      const [statusRes, msgRes, qRes, pRes] = await Promise.all([
+        client.session.status(),
+        client.session.messages({ sessionID: sessionId }),
+        client.question.list(),
+        client.permission.list(),
+      ]);
+
+      const status = statusRes.data?.[sessionId] as SessionStatus | undefined;
+      if (status) {
+        setSessionStatus(status);
+        if (status.type === 'busy') {
+          sawBusy.current = true;
+        }
+      }
+
+      // Update pending interactions
+      const questions = (qRes.data ?? []) as QuestionRequest[];
+      setPendingQuestion(questions.find((q) => q.sessionID === sessionId) ?? null);
+      const permissions = (pRes.data ?? []) as PermissionRequest[];
+      setPendingPermission(permissions.find((p) => p.sessionID === sessionId) ?? null);
+
+      if (Array.isArray(msgRes.data)) {
+        const normalized: MessageWithParts[] = msgRes.data
+          .filter((msg: any) => msg.info?.role)
+          .map((msg: any) => ({ info: msg.info as Message, parts: msg.parts ?? [] }));
+        setMessages(normalized);
+
+        // If we sent a message and are waiting for a response:
+        // only consider it "done" once we saw busy AND now idle
+        // AND we got more messages back (the assistant replied).
+        const isBusy = status?.type === 'busy';
+        const gotReply = normalized.length > messageCountAtSend.current;
+        if (!isBusy && sawBusy.current && gotReply) {
+          console.log('[Poll] busy→idle with reply, switching to idle polling');
+          sawBusy.current = false;
+          fetchTitle();
+          stopPolling();
+          pollRef.current = setInterval(pollOnce, 5000);
+        }
+      }
+    } catch (e) {
+      console.warn('[Poll] error:', e);
+    }
+  }, [sessionId, fetchTitle, stopPolling]);
+
+  // Always poll while the session screen is mounted.
+  // Start at 5s (idle), speed up to 2s when sending.
+  useEffect(() => {
+    console.log('[Poll] starting idle polling (5s)');
+    pollOnce();
+    pollRef.current = setInterval(pollOnce, 5000);
+    return stopPolling;
+  }, [pollOnce, stopPolling]);
+
+  const startFastPolling = useCallback(() => {
+    console.log('[Poll] switching to fast polling (2s)');
+    stopPolling();
+    pollOnce();
+    pollRef.current = setInterval(pollOnce, 2000);
+  }, [pollOnce, stopPolling]);
 
   // --- Send message ---
   const sendMessage = useCallback(
@@ -433,7 +629,8 @@ export function useSession(sessionId: string) {
         setSending(true);
         setError(null);
 
-        // Optimistic user message
+        // Optimistic user message — kept separate from server data to avoid
+        // key conflicts when polling replaces the messages array.
         const tempId = `temp-${Date.now()}`;
         const userMsg: MessageWithParts = {
           info: {
@@ -446,9 +643,17 @@ export function useSession(sessionId: string) {
           },
           parts: [{ id: `${tempId}-p`, sessionID: sessionId, messageID: tempId, type: 'text', text }],
         };
-        setMessages((prev) => [...prev, userMsg]);
+        setPendingUserMsg(userMsg);
+        setMessages((prev) => {
+          messageCountAtSend.current = prev.length + 1; // current msgs + the user msg being sent
+          return prev;
+        });
+
+        // Optimistically show busy
+        setSessionStatus({ type: 'busy' });
 
         const client = getClient();
+        console.log('[Send] calling promptAsync...');
         const res = await client.session.promptAsync({
           sessionID: sessionId,
           parts: [{ type: 'text', text }],
@@ -462,21 +667,25 @@ export function useSession(sessionId: string) {
           const errMsg: string =
             errData?.data?.message || errData?.errors?.[0]?.message || 'Failed to send message';
           if (errMsg.toLowerCase().includes('busy')) {
-            setMessages((prev) => prev.filter((m) => m.info.id !== tempId));
+            setPendingUserMsg(null);
             setError('Session is busy — please wait');
+            setSessionStatus({ type: 'idle' });
           } else {
             setError(errMsg);
           }
           return;
         }
-        // SSE handles streaming the assistant response
+
+        console.log('[Send] promptAsync succeeded, switching to fast polling');
+        sawBusy.current = false; // reset — we'll wait for server to confirm busy→idle
+        startFastPolling();
       } catch (e) {
         setError((e as Error).message);
       } finally {
         setSending(false);
       }
     },
-    [sessionId]
+    [sessionId, startFastPolling]
   );
 
   const abort = useCallback(async () => {
@@ -531,7 +740,7 @@ export function useSession(sessionId: string) {
   );
 
   return {
-    messages, loading, sending, error, sessionStatus, title, sendMessage, abort, refresh: loadMessages,
+    messages: displayMessages, loading, sending, error, sessionStatus, title, sendMessage, abort, refresh: loadMessages,
     pendingPermission, replyPermission,
     pendingQuestion, replyQuestion, rejectQuestion,
   };

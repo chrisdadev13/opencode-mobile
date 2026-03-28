@@ -1,10 +1,17 @@
 import Svg, { Path, G, Mask, Rect, Defs, ClipPath } from 'react-native-svg';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type LogomarkProps = {
   size?: number;
 };
 
 export function Logomark({ size = 40 }: LogomarkProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const innerFill = isDark ? '#4B4646' : '#CFCECD';
+  const outerFill = isDark ? '#F1ECEC' : '#211E1E';
+
   const width = size;
   const height = size * (300 / 240);
 
@@ -15,8 +22,8 @@ export function Logomark({ size = 40 }: LogomarkProps) {
           <Path d="M240 0H0V300H240V0Z" fill="white" />
         </Mask>
         <G mask="url(#mask0)">
-          <Path d="M180 240H60V120H180V240Z" fill="#CFCECD" />
-          <Path d="M180 60H60V240H180V60ZM240 300H0V0H240V300Z" fill="#211E1E" />
+          <Path d="M180 240H60V120H180V240Z" fill={innerFill} />
+          <Path d="M180 60H60V240H180V60ZM240 300H0V0H240V300Z" fill={outerFill} />
         </G>
       </G>
       <Defs>
