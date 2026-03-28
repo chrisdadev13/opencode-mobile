@@ -1,0 +1,40 @@
+hooks/use-opencode.ts
+  1b2bddb4503a0a5e 652-653,655,678-679,688-689,694
+app.json
+  11a18e27bf950d95 31
+app/session/[id].tsx
+  11a18e27bf950d95 12,171-190,521-523
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "811c51a567e512023333c5d7dccaab6e6c1256b3",
+  "prompts": {
+    "11a18e27bf950d95": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "08dd406b-5c38-4dd6-b231-251bf2bd18bb",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 27,
+      "total_deletions": 2,
+      "accepted_lines": 25,
+      "overriden_lines": 0
+    },
+    "1b2bddb4503a0a5e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "24f413b3-03a7-485f-9802-504b6a46638b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 9,
+      "total_deletions": 3,
+      "accepted_lines": 8,
+      "overriden_lines": 0
+    }
+  }
+}
