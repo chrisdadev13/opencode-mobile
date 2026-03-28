@@ -1,14 +1,14 @@
-import { useCallback, useEffect } from 'react';
-import { Dimensions, Pressable, StyleSheet } from 'react-native';
+import { useCallback, useEffect } from "react";
+import { Dimensions, Pressable, StyleSheet } from "react-native";
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   Easing,
   runOnJS,
-} from 'react-native-reanimated';
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
-const DRAWER_WIDTH = (Dimensions.get('window').width || 375) * 0.8;
+const DRAWER_WIDTH = (Dimensions.get("window").width || 375) * 0.9;
 const TIMING_CONFIG = { duration: 250, easing: Easing.out(Easing.cubic) };
 
 type LeftSheetProps = {
@@ -32,7 +32,7 @@ export function LeftSheet({ open, onClose, children }: LeftSheetProps) {
 
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: overlayOpacity.value,
-    pointerEvents: overlayOpacity.value > 0 ? 'auto' : 'none',
+    pointerEvents: overlayOpacity.value > 0 ? "auto" : "none",
   }));
 
   const handleOverlayPress = useCallback(() => {
@@ -42,9 +42,15 @@ export function LeftSheet({ open, onClose, children }: LeftSheetProps) {
   return (
     <>
       <Animated.View style={[styles.overlay, overlayStyle]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleOverlayPress} />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={handleOverlayPress}
+        />
       </Animated.View>
-      <Animated.View style={[styles.drawer, drawerStyle]} className="bg-surface">
+      <Animated.View
+        style={[styles.drawer, drawerStyle]}
+        className="bg-surface"
+      >
         {children}
       </Animated.View>
     </>
@@ -54,11 +60,11 @@ export function LeftSheet({ open, onClose, children }: LeftSheetProps) {
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     zIndex: 100,
   },
   drawer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     bottom: 0,
     left: 0,

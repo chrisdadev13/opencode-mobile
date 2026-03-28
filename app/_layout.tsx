@@ -60,6 +60,7 @@ export default function RootLayout() {
             <Stack screenOptions={{ contentStyle: { backgroundColor: colorScheme === 'dark' ? Colors.dark.background : Colors.light.background } }}>
               <Stack.Screen name="connect" options={{ headerShown: false }} />
               <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="sessions" options={{ headerShown: false, animation: 'slide_from_right' }} />
               <Stack.Screen name="session/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
             </Stack>
