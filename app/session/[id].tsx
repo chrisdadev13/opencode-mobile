@@ -9,8 +9,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Keyboard,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -19,6 +17,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Markdown from "react-native-markdown-display";
 import Animated, {
   Easing,
@@ -168,26 +167,6 @@ export default function SessionScreen() {
   const [activeAgent, setActiveAgent] = useState<"build" | "plan">("build");
   const [agentPickerVisible, setAgentPickerVisible] = useState(false);
   const prevMessageCount = useRef(0);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, () => {
-      setKeyboardVisible(true);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardVisible(false);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
 
   const {
     messages,
@@ -288,9 +267,8 @@ export default function SessionScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-background"
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      style={{ paddingTop: insets.top }}
+      behavior="padding"
+      style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}
     >
       {/* Header */}
       <View className="px-4 pt-2 pb-3" style={{ gap: 12 }}>
@@ -517,11 +495,7 @@ export default function SessionScreen() {
             {/* Input area */}
             <View
               className="px-3 pt-2 mb-0"
-              style={{
-                paddingBottom: keyboardVisible
-                  ? 4
-                  : Math.max(insets.bottom, 18),
-              }}
+              style={{ paddingBottom: Math.max(insets.bottom, 18) }}
             >
               {/* Input card */}
               <View className="bg-surface rounded-4xl border border-border z-50">

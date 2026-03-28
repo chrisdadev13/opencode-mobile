@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { HeroUINativeProvider } from 'heroui-native';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import 'react-native-reanimated';
 import '../global.css';
 
@@ -55,13 +56,15 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? OpenCodeDark : OpenCodeLight}>
         <HeroUINativeProvider>
-          <Stack screenOptions={{ contentStyle: { backgroundColor: colorScheme === 'dark' ? Colors.dark.background : Colors.light.background } }}>
-            <Stack.Screen name="connect" options={{ headerShown: false }} />
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="session/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          </Stack>
-          <StatusBar style="auto" />
+          <KeyboardProvider>
+            <Stack screenOptions={{ contentStyle: { backgroundColor: colorScheme === 'dark' ? Colors.dark.background : Colors.light.background } }}>
+              <Stack.Screen name="connect" options={{ headerShown: false }} />
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="session/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            </Stack>
+            <StatusBar style="auto" />
+          </KeyboardProvider>
         </HeroUINativeProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
