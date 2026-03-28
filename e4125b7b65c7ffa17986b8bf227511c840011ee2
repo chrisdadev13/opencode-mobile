@@ -1,0 +1,25 @@
+eas.json
+  96a990d8dc9e2b76 1-21
+app.json
+  96a990d8dc9e2b76 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "e4125b7b65c7ffa17986b8bf227511c840011ee2",
+  "prompts": {
+    "96a990d8dc9e2b76": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f7e690a9-29d4-46ea-8bf9-f68a2ac0fdba",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris <92900301+chrisdadev13@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 22,
+      "total_deletions": 1,
+      "accepted_lines": 22,
+      "overriden_lines": 0
+    }
+  }
+}
