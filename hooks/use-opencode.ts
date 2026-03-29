@@ -91,7 +91,8 @@ export function useSessionStatuses() {
 // useSessions — session list CRUD
 // ---------------------------------------------------------------------------
 
-export function useSessions() {
+export function useSessions(options?: { directory?: string }) {
+  const directory = options?.directory;
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +106,7 @@ export function useSessions() {
     try {
       setError(null);
       const client = getClient();
-      const res = await client.session.list();
+      const res = await client.session.list(directory ? { directory } : undefined);
       if (res.error) { setError('Failed to load sessions'); return; }
       if (Array.isArray(res.data)) {
         setSessions(res.data.map((s: Session) => ({ ...s, title: resolveTitle(s) })));
@@ -117,7 +118,7 @@ export function useSessions() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [directory]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -131,7 +132,7 @@ export function useSessions() {
   const create = useCallback(async (title?: string) => {
     try {
       const client = getClient();
-      const res = await client.session.create({ title });
+      const res = await client.session.create(directory ? { title, directory } : { title });
       if (res.error || !res.data) return null;
       const session = { ...res.data, title: resolveTitle(res.data) } as Session;
       setSessions((prev) => [session, ...prev]);
@@ -140,7 +141,7 @@ export function useSessions() {
       setError((e as Error).message);
       return null;
     }
-  }, []);
+  }, [directory]);
 
   const remove = useCallback(async (id: string) => {
     try {
@@ -750,6 +751,55 @@ export function useSession(sessionId: string) {
     pendingPermission, replyPermission,
     pendingQuestion, replyQuestion, rejectQuestion,
   };
+}
+
+// ---------------------------------------------------------------------------
+// useProjects — project list
+// ---------------------------------------------------------------------------
+
+export type ProjectItem = {
+  id: string;
+  worktree: string;
+  name?: string;
+  time: { created: number; updated: number };
+};
+
+export function useProjects() {
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const hasLoaded = useRef(false);
+
+  const refresh = useCallback(async () => {
+    if (!hasLoaded.current) setLoading(true);
+    try {
+      setError(null);
+      const client = getClient();
+      const res = await client.project.list();
+      if (res.error) { setError('Failed to load projects'); return; }
+      if (Array.isArray(res.data)) {
+        const sorted = (res.data as ProjectItem[]).sort(
+          (a, b) => b.time.updated - a.time.updated,
+        );
+        setProjects(sorted);
+        hasLoaded.current = true;
+      }
+    } catch (e) {
+      if (!hasLoaded.current) setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  useFocusEffect(useCallback(() => {
+    refresh();
+    const id = setInterval(refresh, 10_000);
+    return () => clearInterval(id);
+  }, [refresh]));
+
+  return { projects, loading, error, refresh };
 }
 
 // ---------------------------------------------------------------------------

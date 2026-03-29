@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import type { SessionStatus } from "@opencode-ai/sdk/v2/client";
 import { Redirect, useRouter } from "expo-router";
-import { Button, Dialog } from "heroui-native";
+import { Button } from "heroui-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -13,131 +12,42 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeftSheet } from "@/components/left-sheet";
 import { Logo } from "@/components/logo";
-import { Spinner } from "@/components/spinner";
-import { blue, Colors, Fonts } from "@/constants/theme";
+import { Colors, Fonts } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import {
-  useProjectInfo,
-  useSessionStatuses,
-  useSessions,
-} from "@/hooks/use-opencode";
+import { useProjects } from "@/hooks/use-opencode";
+import { getClient, resetClient } from "@/lib/opencode";
 import { clearAllServers, getLastUsedServer } from "@/lib/servers";
-import { resetClient } from "@/lib/opencode";
-
-type Session = ReturnType<typeof useSessions>["sessions"][number];
-type GroupMode = "status" | "time";
 
 function formatTime(timestamp: number): string {
   const now = Date.now();
   const diff = now - timestamp;
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return "now";
+  if (seconds < 60) return "just now";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes === 1) return "1 minute ago";
+  if (minutes < 60) return `${minutes} minutes ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours === 1) return "1 hour ago";
+  if (hours < 24) return `${hours} hours ago`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days === 1) return "1 day ago";
+  if (days < 30) return `${days} days ago`;
   const date = new Date(timestamp);
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function getStatusColor(isDark: boolean): { busy: string; error: string } {
-  return {
-    busy: (isDark ? blue.dark : blue.light)[8],
-    error: "#ef4444",
-  };
+function abbreviatePath(worktree: string): string {
+  const home = "/Users/" + worktree.split("/")[2];
+  if (worktree.startsWith(home)) {
+    return "~" + worktree.slice(home.length);
+  }
+  return worktree;
 }
 
-function getTimeGroup(timestamp: number): string {
-  const now = new Date();
-  const date = new Date(timestamp);
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).getTime();
-  const startOfYesterday = startOfToday - 86400000;
-  const startOfWeek = startOfToday - now.getDay() * 86400000;
-
-  if (timestamp >= startOfToday) return "Today";
-  if (timestamp >= startOfYesterday) return "Yesterday";
-  if (timestamp >= startOfWeek) return "This Week";
-  return "Older";
-}
-
-type GroupedSessions = { label: string; sessions: Session[] }[];
-
-function groupByStatus(
-  sessions: Session[],
-  statuses: Record<string, SessionStatus>,
-): GroupedSessions {
-  const busy: Session[] = [];
-  const retry: Session[] = [];
-  const idle: Session[] = [];
-
-  for (const s of sessions) {
-    const st = statuses[s.id];
-    if (st?.type === "busy") busy.push(s);
-    else if (st?.type === "retry") retry.push(s);
-    else idle.push(s);
-  }
-
-  const groups: GroupedSessions = [];
-  if (busy.length) groups.push({ label: "Running", sessions: busy });
-  if (retry.length) groups.push({ label: "Needs Attention", sessions: retry });
-  if (idle.length) groups.push({ label: "Idle", sessions: idle });
-  return groups;
-}
-
-function groupByTime(sessions: Session[]): GroupedSessions {
-  const map = new Map<string, Session[]>();
-  const order = ["Today", "Yesterday", "This Week", "Older"];
-
-  for (const s of sessions) {
-    const group = getTimeGroup(s.time.updated);
-    if (!map.has(group)) map.set(group, []);
-    map.get(group)!.push(s);
-  }
-
-  return order
-    .filter((g) => map.has(g))
-    .map((g) => ({ label: g, sessions: map.get(g)! }));
-}
-
-function SessionStatusIcon({
-  status,
-  isDark,
-}: {
-  status: SessionStatus | undefined;
-  isDark: boolean;
-}) {
-  const statusColors = getStatusColor(isDark);
-  if (!status || status.type === "idle") {
-    return (
-      <View
-        style={{
-          width: 14,
-          height: 14,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <View
-          style={{
-            width: 10,
-            height: 2,
-            borderRadius: 1,
-            backgroundColor: "#d4d4d4",
-          }}
-        />
-      </View>
-    );
-  }
-  if (status.type === "busy") {
-    return <Spinner size={14} color={statusColors.busy} />;
-  }
-  return <Ionicons name="alert-circle" size={14} color={statusColors.error} />;
+function getProjectName(worktree: string, name?: string): string {
+  if (name) return name;
+  const segments = worktree.replace(/\/+$/, "").split("/");
+  return segments[segments.length - 1] || worktree;
 }
 
 export default function HomeScreen() {
@@ -151,427 +61,164 @@ export default function HomeScreen() {
   const router = useRouter();
   const server = getLastUsedServer();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [groupMode, setGroupMode] = useState<GroupMode>("status");
-  const { sessions, loading, error, refresh, create, remove } = useSessions();
-  const statuses = useSessionStatuses();
-  const projectInfo = useProjectInfo();
-  const [deleteTarget, setDeleteTarget] = useState<{
-    id: string;
-    title: string;
-  } | null>(null);
-
-  const grouped =
-    groupMode === "status"
-      ? groupByStatus(sessions, statuses)
-      : groupByTime(sessions);
-
-  async function handleNewSession() {
-    const session = await create();
-    if (session) {
-      router.push(`/session/${session.id}`);
-    }
-  }
+  const { projects: allProjects, loading, error, refresh } = useProjects();
+  const projects = allProjects.filter((p) => p.worktree !== "/");
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      {/* Header with hamburger + new session */}
+      {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3">
         <Pressable hitSlop={8} onPress={() => setMenuOpen(true)}>
           <Ionicons name="menu" size={24} color={colors.text} />
         </Pressable>
-        <Pressable hitSlop={8} onPress={handleNewSession}>
-          <Ionicons name="add" size={24} color={colors.text} />
+        <Pressable hitSlop={8} onPress={refresh}>
+          <Ionicons name="refresh" size={20} color={colors.muted} />
         </Pressable>
       </View>
 
+      {/* Logo + server status */}
+      <View className="items-center mt-6 mb-8">
+        <Logo />
+        <View className="flex-row items-center mt-3 gap-2">
+          <View
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: error ? "#ef4444" : "#22c55e",
+            }}
+          />
+          <Text className="text-muted text-sm">
+            {server?.label || "Local Server"}
+          </Text>
+        </View>
+      </View>
+
+      {/* Projects heading */}
+      <View className="px-6 flex-row items-center mb-2" style={{ gap: 6 }}>
+        <Text
+          className="text-foreground text-sm"
+          style={{ fontFamily: Fonts.sans, fontWeight: "500" }}
+        >
+          Recent Projects
+        </Text>
+        {!loading && projects.length > 0 && (
+          <Text
+            className="text-muted text-xs"
+            style={{ fontFamily: Fonts.sans }}
+          >
+            ({projects.length})
+          </Text>
+        )}
+      </View>
+
+      {/* Projects scroll area */}
       <ScrollView
-        contentContainerClassName="flex-grow pb-12"
+        className="flex-1 px-6"
+        contentContainerClassName="pb-8"
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo + server status */}
-        <View className="items-center mt-8 mb-12">
-          <Logo />
-          <View className="flex-row items-center mt-4 gap-2">
-            <View
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: error ? "#ef4444" : "#22c55e",
-              }}
-            />
-            <Text className="text-muted text-sm">
-              {server?.label || "Local Server"}
-            </Text>
+        {loading ? (
+          <View className="items-center py-8">
+            <ActivityIndicator color={colors.muted} />
           </View>
-        </View>
+        ) : error ? (
+          <View className="items-center py-8">
+            <Text className="text-muted text-sm mb-3">{error}</Text>
+            <Button variant="outline" size="sm" onPress={refresh}>
+              <Button.Label>Retry</Button.Label>
+            </Button>
+          </View>
+        ) : projects.length === 0 ? (
+          <View className="items-center py-8">
+            <Text className="text-muted text-sm">No projects found</Text>
+          </View>
+        ) : (
+          projects.map((project) => {
+            const name = getProjectName(project.worktree, project.name);
+            return (
+              <Pressable
+                key={project.id}
+                className="py-2.5"
+                onPress={async () => {
+                  try {
+                    const client = getClient();
+                    const res = await client.session.list({ directory: project.worktree });
+                    const sessions = Array.isArray(res.data) ? res.data : [];
+                    if (sessions.length === 0) {
+                      const created = await client.session.create({ directory: project.worktree });
+                      if (created.data) {
+                        router.push({
+                          pathname: "/session/[id]",
+                          params: { id: created.data.id, directory: project.worktree, projectName: name },
+                        });
+                        return;
+                      }
+                    }
+                  } catch {}
+                  router.push({
+                    pathname: "/sessions",
+                    params: {
+                      directory: project.worktree,
+                      name,
+                    },
+                  });
+                }}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Text
+                    className="text-foreground text-[14px] flex-1"
+                    style={{ fontFamily: Fonts.mono, fontWeight: "300" }}
+                    numberOfLines={1}
+                  >
+                    {abbreviatePath(project.worktree)}
+                  </Text>
+                  <Text
+                    className="text-muted text-xs ml-4"
+                    style={{ flexShrink: 0, fontFamily: Fonts.mono }}
+                  >
+                    {formatTime(project.time.updated)}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })
+        )}
+      </ScrollView>
 
-        {/* Sessions list */}
-        <View className="px-6">
-          <View className="flex-row items-center justify-between mb-4">
+      {/* Left Sheet */}
+      <LeftSheet open={menuOpen} onClose={() => setMenuOpen(false)}>
+        <View className="flex-1" style={{ paddingTop: insets.top }}>
+          <View className="flex-1 items-center justify-center">
             <Text
               className="text-foreground text-base"
               style={{ fontFamily: Fonts.sans, fontWeight: "600" }}
             >
-              Sessions
+              No projects open
             </Text>
-            <View className="flex-row items-center" style={{ gap: 12 }}>
-              <Pressable
-                hitSlop={8}
-                onPress={() =>
-                  setGroupMode((m) => (m === "status" ? "time" : "status"))
-                }
-                className="flex-row items-center"
-                style={{ gap: 4 }}
-              >
-                <Ionicons
-                  name={groupMode === "status" ? "pulse" : "time-outline"}
-                  size={14}
-                  color={colors.muted}
-                />
-                <Text
-                  className="text-muted text-xs"
-                  style={{ fontFamily: Fonts.sans }}
-                >
-                  {groupMode === "status" ? "Status" : "Time"}
-                </Text>
-              </Pressable>
-              <Pressable hitSlop={8} onPress={refresh}>
-                <Ionicons name="refresh" size={18} color={colors.muted} />
-              </Pressable>
-            </View>
-          </View>
-
-          {loading ? (
-            <View className="items-center py-8">
-              <ActivityIndicator color={colors.muted} />
-            </View>
-          ) : error ? (
-            <View className="items-center py-8">
-              <Text className="text-muted text-sm mb-3">{error}</Text>
-              <Button variant="outline" size="sm" onPress={refresh}>
-                <Button.Label>Retry</Button.Label>
-              </Button>
-            </View>
-          ) : sessions.length === 0 ? (
-            <View className="items-center py-8">
-              <Text className="text-muted text-sm mb-3">No sessions yet</Text>
-              <Button variant="outline" size="sm" onPress={handleNewSession}>
-                <Ionicons name="add" size={16} color={colors.text} />
-                <Button.Label>New Session</Button.Label>
-              </Button>
-            </View>
-          ) : (
-            grouped.map((group) => (
-              <View key={group.label} className="mb-4">
-                {/* Section header */}
-                <View className="flex-row items-center mb-2" style={{ gap: 6 }}>
-                  {groupMode === "status" && (
-                    <View
-                      style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: 4,
-                        backgroundColor:
-                          group.label === "Running"
-                            ? "#60a5fa"
-                            : group.label === "Needs Attention"
-                              ? "#ef4444"
-                              : "#22c55e",
-                      }}
-                    />
-                  )}
-                  <Text
-                    className="text-muted text-xs"
-                    style={{
-                      fontFamily: Fonts.sans,
-                      fontWeight: "600",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {group.label}
-                  </Text>
-                  <Text
-                    className="text-muted text-xs"
-                    style={{ fontFamily: Fonts.sans }}
-                  >
-                    ({group.sessions.length})
-                  </Text>
-                </View>
-
-                {/* Session rows */}
-                {group.sessions.map((session, index) => {
-                  const sessionStatus = statuses[session.id];
-                  return (
-                    <Pressable
-                      key={session.id}
-                      className="py-3"
-                      style={
-                        index < group.sessions.length - 1
-                          ? {
-                              borderBottomWidth: 0.5,
-                              borderBottomColor: colors.border,
-                            }
-                          : undefined
-                      }
-                      onPress={() => router.push(`/session/${session.id}`)}
-                      onLongPress={() =>
-                        setDeleteTarget({
-                          id: session.id,
-                          title: session.title || "Untitled",
-                        })
-                      }
-                    >
-                      <View className="flex-row items-center justify-between">
-                        <View
-                          className="flex-row items-center flex-1"
-                          style={{ gap: 8 }}
-                        >
-                          <SessionStatusIcon
-                            status={sessionStatus}
-                            isDark={colorScheme === "dark"}
-                          />
-                          <Text
-                            className="text-foreground text-sm flex-1"
-                            style={{ fontFamily: Fonts.sans }}
-                            numberOfLines={1}
-                          >
-                            {session.title || "Untitled"}
-                          </Text>
-                        </View>
-                        <Text
-                          className="text-muted text-xs ml-4"
-                          style={{ flexShrink: 0 }}
-                        >
-                          {formatTime(session.time.updated)}
-                        </Text>
-                        <Pressable
-                          hitSlop={8}
-                          onPress={() =>
-                            setDeleteTarget({
-                              id: session.id,
-                              title: session.title || "Untitled",
-                            })
-                          }
-                          style={{ marginLeft: 8 }}
-                        >
-                          <Ionicons
-                            name="trash-outline"
-                            size={16}
-                            color={colors.muted}
-                          />
-                        </Pressable>
-                      </View>
-                      {/* Status subtitle for busy/retry */}
-                      {sessionStatus?.type === "busy" && (
-                        <Text
-                          className="text-xs ml-6 mt-0.5"
-                          style={{ color: "#60a5fa", fontFamily: Fonts.sans }}
-                        >
-                          Running...
-                        </Text>
-                      )}
-                      {sessionStatus?.type === "retry" && (
-                        <Text
-                          className="text-xs ml-6 mt-0.5"
-                          style={{ color: "#ef4444", fontFamily: Fonts.sans }}
-                        >
-                          Retry #{sessionStatus.attempt}:{" "}
-                          {sessionStatus.message}
-                        </Text>
-                      )}
-                      {session.summary && (
-                        <Text className="text-muted text-xs mt-1 ml-6">
-                          +{session.summary.additions} -
-                          {session.summary.deletions} in {session.summary.files}{" "}
-                          file{session.summary.files !== 1 ? "s" : ""}
-                        </Text>
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ))
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Delete confirmation dialog */}
-      <Dialog
-        isOpen={!!deleteTarget}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay />
-          <Dialog.Content>
-            <View className="mb-5 gap-1.5">
-              <Dialog.Title>Delete Session</Dialog.Title>
-              <Dialog.Description>
-                Delete "{deleteTarget?.title}"? This cannot be undone.
-              </Dialog.Description>
-            </View>
-            <View className="flex-row justify-end gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onPress={() => setDeleteTarget(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onPress={() => {
-                  if (deleteTarget) remove(deleteTarget.id);
-                  setDeleteTarget(null);
-                }}
-              >
-                Delete
-              </Button>
-            </View>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
-
-      {/* Left Sheet Navigation */}
-      <LeftSheet open={menuOpen} onClose={() => setMenuOpen(false)}>
-        <View className="flex-1" style={{ paddingTop: insets.top }}>
-          {/* New Session */}
-          <View className="px-4 pt-4 pb-3">
+            <Text
+              className="text-muted text-sm mt-2"
+              style={{ fontFamily: Fonts.sans }}
+            >
+              Open a project to get started
+            </Text>
             <Button
               variant="outline"
-              onPress={() => {
-                setMenuOpen(false);
-                handleNewSession();
-              }}
+              size="sm"
+              className="mt-5"
+              onPress={() => setMenuOpen(false)}
             >
-              <Ionicons name="add" size={18} color={colors.text} />
-              <Button.Label>New Session</Button.Label>
+              <Ionicons name="open-outline" size={16} color={colors.text} />
+              <Button.Label>Open project</Button.Label>
             </Button>
           </View>
 
-          {/* Session list */}
-          <ScrollView
-            className="flex-1 px-4"
-            showsVerticalScrollIndicator={false}
-          >
-            {loading ? (
-              <View className="items-center py-8">
-                <ActivityIndicator color={colors.muted} />
-              </View>
-            ) : sessions.length === 0 ? (
-              <Text className="text-muted text-sm text-center py-8">
-                No sessions yet
-              </Text>
-            ) : (
-              grouped.map((group) => (
-                <View key={`drawer-${group.label}`} className="mb-3">
-                  {/* Section header */}
-                  <View
-                    className="flex-row items-center px-2 mb-1"
-                    style={{ gap: 5 }}
-                  >
-                    {groupMode === "status" && (
-                      <View
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: 3,
-                          backgroundColor:
-                            group.label === "Running"
-                              ? "#60a5fa"
-                              : group.label === "Needs Attention"
-                                ? "#ef4444"
-                                : "#22c55e",
-                        }}
-                      />
-                    )}
-                    <Text
-                      className="text-muted text-xs"
-                      style={{
-                        fontFamily: Fonts.sans,
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {group.label}
-                    </Text>
-                  </View>
-
-                  {group.sessions.map((session) => {
-                    const sessionStatus = statuses[session.id];
-                    return (
-                      <Pressable
-                        key={session.id}
-                        className="py-3 px-2 rounded-lg"
-                        onPress={() => {
-                          setMenuOpen(false);
-                          router.push(`/session/${session.id}`);
-                        }}
-                      >
-                        <View
-                          className="flex-row items-center"
-                          style={{ gap: 8 }}
-                        >
-                          <SessionStatusIcon
-                            status={sessionStatus}
-                            isDark={colorScheme === "dark"}
-                          />
-                          <Text
-                            className="text-foreground text-sm flex-1"
-                            style={{ fontFamily: Fonts.sans }}
-                            numberOfLines={1}
-                          >
-                            {session.title || "Untitled"}
-                          </Text>
-                        </View>
-                        <View
-                          className="flex-row items-center ml-6 mt-0.5"
-                          style={{ gap: 6 }}
-                        >
-                          <Text className="text-muted text-xs">
-                            {formatTime(session.time.updated)}
-                          </Text>
-                          {sessionStatus?.type === "busy" && (
-                            <Text
-                              className="text-xs"
-                              style={{
-                                color: "#60a5fa",
-                                fontFamily: Fonts.sans,
-                              }}
-                            >
-                              Running
-                            </Text>
-                          )}
-                          {sessionStatus?.type === "retry" && (
-                            <Text
-                              className="text-xs"
-                              style={{
-                                color: "#ef4444",
-                                fontFamily: Fonts.sans,
-                              }}
-                            >
-                              Retry #{sessionStatus.attempt}
-                            </Text>
-                          )}
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ))
-            )}
-          </ScrollView>
-
-          {/* Server & project info */}
+          {/* Server info + disconnect */}
           <View
             className="px-4 py-3 border-t border-border"
             style={{ paddingBottom: insets.bottom + 8 }}
           >
-            <View className="flex-row items-center justify-between mb-1">
+            <View className="flex-row items-center justify-between">
               <View className="flex-row items-center gap-2 flex-1">
                 <View
                   style={{
@@ -606,25 +253,6 @@ export default function HomeScreen() {
                 </Text>
               </Pressable>
             </View>
-            {projectInfo && (
-              <View className="ml-4 gap-0.5">
-                <Text className="text-muted text-xs" numberOfLines={1}>
-                  {projectInfo.path}
-                </Text>
-                {projectInfo.branch ? (
-                  <View className="flex-row items-center gap-1">
-                    <Ionicons
-                      name="git-branch-outline"
-                      size={12}
-                      color={colors.muted}
-                    />
-                    <Text className="text-muted text-xs">
-                      {projectInfo.branch}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            )}
           </View>
         </View>
       </LeftSheet>
