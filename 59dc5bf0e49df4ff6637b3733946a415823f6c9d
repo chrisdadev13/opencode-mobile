@@ -1,0 +1,79 @@
+components/chat/status-badge.tsx
+  caebed98ad962275 1-83
+components/chat/session-header.tsx
+  caebed98ad962275 2,5-6,9-10,12-15,18-19,21,32,69-70
+hooks/use-controllable-state.ts
+  caebed98ad962275 1-31
+components/chat/subtask.tsx
+  caebed98ad962275 1-63
+components/chat/shimmer.tsx
+  caebed98ad962275 1-106
+components/ui/collapsible.tsx
+  caebed98ad962275 1-8,10,12-100,103-109,113-115
+components/chat/message.tsx
+  caebed98ad962275 1-266
+components/chat/confirmation.tsx
+  caebed98ad962275 1-241
+components/chat/patch.tsx
+  caebed98ad962275 1-84
+components/chat/index.ts
+  caebed98ad962275 1-67,70,73-74
+components/chat/question.tsx
+  caebed98ad962275 1-454
+components/chat/conversation.tsx
+  caebed98ad962275 1-113
+components/chat/tool.tsx
+  caebed98ad962275 1-185
+components/chat/retry.tsx
+  caebed98ad962275 1-56
+app/session/[id].tsx
+  caebed98ad962275 10-19,21-28,135,191-195,206-208,212-238,242,244,270-271,273-274,276-300,307,314,350,353,375,378,404
+  b0299cf40e35818c 1,4,49,143,186-190,196-197,203,209-211,239,241,243,245-249,251-253,255-262
+components/chat/prompt-input.tsx
+  caebed98ad962275 1-315
+hooks/use-opencode.ts
+  b0299cf40e35818c 552,563-576,614,636,696,707
+components/chat/segmented-tabs.tsx
+  caebed98ad962275 1-64
+components/chat/picker.tsx
+  caebed98ad962275 1-179
+lib/utils.ts
+  caebed98ad962275 1-5
+components/chat/reasoning.tsx
+  caebed98ad962275 1-279
+components/chat/file-part.tsx
+  caebed98ad962275 1-42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.3",
+  "base_commit_sha": "59dc5bf0e49df4ff6637b3733946a415823f6c9d",
+  "prompts": {
+    "b0299cf40e35818c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "abddbb0d-a28a-4354-ace0-1083154f0e27",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris",
+      "messages": [],
+      "total_additions": 68,
+      "total_deletions": 57,
+      "accepted_lines": 53,
+      "overriden_lines": 0
+    },
+    "caebed98ad962275": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1c8823d7-309f-41ad-a27b-73977b8aef97",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris",
+      "messages": [],
+      "total_additions": 2864,
+      "total_deletions": 253,
+      "accepted_lines": 2854,
+      "overriden_lines": 0
+    }
+  }
+}
