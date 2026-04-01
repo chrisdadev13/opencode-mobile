@@ -1,20 +1,31 @@
+import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   capitalize,
   ChangesTab,
-  ChatInput,
-  EmptyState,
-  InputToolbar,
-  MessageBubble,
-  PermissionCard,
-  PickerModal,
+  Confirmation,
+  ConfirmationAction,
+  ConfirmationActions,
+  ConfirmationContent,
+  ConfirmationHeader,
+  ConversationEmptyState,
+  Message,
+  MessageContent,
+  MessageParts,
+  Picker,
   PickerOption,
-  PickerSectionHeader,
-  QuestionCard,
+  PickerSection,
+  PromptInput,
+  PromptInputAction,
+  PromptInputActions,
+  PromptInputTextarea,
+  PromptInputToolbar,
+  PromptInputToolbarItem,
+  Question,
   SessionHeader,
   ThinkingShimmer,
   useColors,
@@ -35,7 +46,7 @@ export default function SessionScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
-  const scrollViewRef = useRef<ScrollView>(null);
+  const listRef = useRef<FlashListRef<(typeof messages)[number]>>(null);
   const prevMessageCount = useRef(0);
 
   const [inputText, setInputText] = useState("");
@@ -121,10 +132,7 @@ export default function SessionScreen() {
     return match?.modelName ?? activeModel.modelID;
   }, [activeModel, allModels]);
 
-  const handleSend = async () => {
-    if (!inputText.trim() || isBusy) return;
-    const text = inputText.trim();
-    setInputText("");
+  const handleSend = async (text: string) => {
     await sendMessage(
       text,
       activeModel ?? undefined,
@@ -132,7 +140,7 @@ export default function SessionScreen() {
       selectedVariant ?? undefined,
     );
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      listRef.current?.scrollToEnd({ animated: true });
     }, 100);
   };
 
@@ -175,65 +183,83 @@ export default function SessionScreen() {
                 <ActivityIndicator color={colors.muted} />
               </View>
             ) : (
-              <ScrollView
-                ref={scrollViewRef}
-                className="flex-1"
-                contentContainerClassName="py-4"
-                contentContainerStyle={
-                  messages.length === 0 ? { flexGrow: 1 } : undefined
-                }
+              <FlashList
+                ref={listRef}
+                data={messages.filter((msg) => msg.info?.role)}
+                keyExtractor={(item) => item.info.id}
+                renderItem={({ item }) => (
+                  <Message from={item.info.role}>
+                    <MessageContent>
+                      <MessageParts parts={item.parts} />
+                    </MessageContent>
+                  </Message>
+                )}
+                contentContainerStyle={{ paddingVertical: 16 }}
                 showsVerticalScrollIndicator={false}
                 onContentSizeChange={() => {
                   const count = messages.length;
                   if (count !== prevMessageCount.current) {
                     prevMessageCount.current = count;
-                    scrollViewRef.current?.scrollToEnd({ animated: false });
+                    listRef.current?.scrollToEnd({ animated: false });
                   }
                 }}
-              >
-                {messages.length === 0 && !loading && (
-                  <EmptyState projectInfo={projectInfo} />
-                )}
+                ListEmptyComponent={
+                  <ConversationEmptyState projectInfo={projectInfo} />
+                }
+                ListFooterComponent={
+                  <>
+                    {pendingPermission && (
+                      <Confirmation permission={pendingPermission}>
+                        <ConfirmationHeader />
+                        <ConfirmationContent />
+                        <ConfirmationActions>
+                          <ConfirmationAction
+                            label="Deny"
+                            variant="outline"
+                            onPress={() =>
+                              replyPermission(pendingPermission.id, "reject")
+                            }
+                          />
+                          <ConfirmationAction
+                            label="Always"
+                            variant="secondary"
+                            onPress={() =>
+                              replyPermission(pendingPermission.id, "always")
+                            }
+                          />
+                          <ConfirmationAction
+                            label="Allow"
+                            variant="primary"
+                            onPress={() =>
+                              replyPermission(pendingPermission.id, "once")
+                            }
+                          />
+                        </ConfirmationActions>
+                      </Confirmation>
+                    )}
 
-                {messages
-                  .filter((msg) => msg.info?.role)
-                  .map((msg, idx) => (
-                    <MessageBubble
-                      key={`${msg.info.id}-${idx}`}
-                      role={msg.info.role}
-                      parts={msg.parts}
-                    />
-                  ))}
+                    {pendingQuestion && (
+                      <Question
+                        question={pendingQuestion}
+                        onSubmit={(answers) =>
+                          replyQuestion(pendingQuestion.id, answers)
+                        }
+                        onReject={() => rejectQuestion(pendingQuestion.id)}
+                      />
+                    )}
 
-                {pendingPermission && (
-                  <PermissionCard
-                    permission={pendingPermission}
-                    onReply={(reply) =>
-                      replyPermission(pendingPermission.id, reply)
-                    }
-                  />
-                )}
+                    {isBusy && !pendingPermission && !pendingQuestion && (
+                      <ThinkingShimmer />
+                    )}
 
-                {pendingQuestion && (
-                  <QuestionCard
-                    question={pendingQuestion}
-                    onReply={(answers) =>
-                      replyQuestion(pendingQuestion.id, answers)
-                    }
-                    onReject={() => rejectQuestion(pendingQuestion.id)}
-                  />
-                )}
-
-                {isBusy && !pendingPermission && !pendingQuestion && (
-                  <ThinkingShimmer />
-                )}
-
-                {error && (
-                  <View className="px-4 py-2">
-                    <Text className="text-danger text-xs">{error}</Text>
-                  </View>
-                )}
-              </ScrollView>
+                    {error && (
+                      <View className="px-4 py-2">
+                        <Text className="text-danger text-xs">{error}</Text>
+                      </View>
+                    )}
+                  </>
+                }
+              />
             )}
 
             {/* Input area */}
@@ -241,35 +267,51 @@ export default function SessionScreen() {
               className="px-3 pt-2 mb-0"
               style={{ paddingBottom: Math.max(insets.bottom, 18) }}
             >
-              <ChatInput
+              <PromptInput
+                className="bg-surface rounded-4xl border border-border z-50"
                 value={inputText}
-                onChangeText={setInputText}
-                onSend={handleSend}
+                onValueChange={setInputText}
+                onSubmit={handleSend}
                 isBusy={isBusy}
-              />
-              <InputToolbar
-                activeAgent={activeAgent}
-                activeModelLabel={activeModelLabel}
-                activeEffortLabel={activeEffortLabel}
-                hasVariants={activeVariants.length > 0}
-                onAgentPress={() => setAgentPickerVisible(true)}
-                onModelPress={() => setModelPickerVisible(true)}
-                onEffortPress={() => setEffortPickerVisible(true)}
-              />
+              >
+                <PromptInputTextarea />
+                <PromptInputActions>
+                  <PromptInputAction type="attach" />
+                  <PromptInputAction type="send" />
+                </PromptInputActions>
+              </PromptInput>
+              <PromptInputToolbar>
+                <PromptInputToolbarItem
+                  label={activeAgent === "plan" ? "Plan" : "Build"}
+                  onPress={() => setAgentPickerVisible(true)}
+                />
+                <PromptInputToolbarItem
+                  label={activeModelLabel}
+                  icon="flash"
+                  onPress={() => setModelPickerVisible(true)}
+                />
+                <PromptInputToolbarItem
+                  label={activeEffortLabel}
+                  icon="speedometer-outline"
+                  onPress={() => setEffortPickerVisible(true)}
+                  hasChevron={activeVariants.length > 0}
+                  disabled={activeVariants.length === 0}
+                />
+              </PromptInputToolbar>
             </View>
           </>
         )}
       </View>
 
       {/* Model picker */}
-      <PickerModal
+      <Picker
         visible={modelPickerVisible}
         title="Select Model"
         onClose={() => setModelPickerVisible(false)}
       >
         {providers.map((provider) => (
           <View key={provider.id}>
-            <PickerSectionHeader title={provider.name} />
+            <PickerSection title={provider.name} />
             {provider.models.map((model) => (
               <PickerOption
                 key={`${provider.id}-${model.id}`}
@@ -305,10 +347,10 @@ export default function SessionScreen() {
             </Text>
           </View>
         )}
-      </PickerModal>
+      </Picker>
 
       {/* Agent picker */}
-      <PickerModal
+      <Picker
         visible={agentPickerVisible}
         title="Select Mode"
         onClose={() => setAgentPickerVisible(false)}
@@ -330,10 +372,10 @@ export default function SessionScreen() {
             }}
           />
         ))}
-      </PickerModal>
+      </Picker>
 
       {/* Effort picker */}
-      <PickerModal
+      <Picker
         visible={effortPickerVisible}
         title="Reasoning Effort"
         onClose={() => setEffortPickerVisible(false)}
@@ -359,7 +401,7 @@ export default function SessionScreen() {
             }}
           />
         ))}
-      </PickerModal>
+      </Picker>
     </KeyboardAvoidingView>
   );
 }

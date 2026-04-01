@@ -51,17 +51,19 @@ function getProjectName(worktree: string, name?: string): string {
 }
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { projects: allProjects, loading, error, refresh } = useProjects();
+
   if (!getLastUsedServer()) {
     return <Redirect href="/connect" />;
   }
 
-  const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const router = useRouter();
   const server = getLastUsedServer();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { projects: allProjects, loading, error, refresh } = useProjects();
+
   const projects = allProjects.filter((p) => p.worktree !== "/");
 
   return (
@@ -143,14 +145,22 @@ export default function HomeScreen() {
                 onPress={async () => {
                   try {
                     const client = getClient();
-                    const res = await client.session.list({ directory: project.worktree });
+                    const res = await client.session.list({
+                      directory: project.worktree,
+                    });
                     const sessions = Array.isArray(res.data) ? res.data : [];
                     if (sessions.length === 0) {
-                      const created = await client.session.create({ directory: project.worktree });
+                      const created = await client.session.create({
+                        directory: project.worktree,
+                      });
                       if (created.data) {
                         router.push({
                           pathname: "/session/[id]",
-                          params: { id: created.data.id, directory: project.worktree, projectName: name },
+                          params: {
+                            id: created.data.id,
+                            directory: project.worktree,
+                            projectName: name,
+                          },
                         });
                         return;
                       }
