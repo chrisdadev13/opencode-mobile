@@ -1,23 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ReactNode } from "react";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, Text, View, type ViewProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Fonts } from "@/constants/theme";
 import { useColors } from "./use-colors";
 
-// ── Generic PickerModal ────────────────────────────────────────────
+// ── Picker ─────────────────────────────────────────────────────────
 
-export function PickerModal({
-  visible,
-  title,
-  onClose,
-  children,
-}: {
+export type PickerProps = {
   visible: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
-}) {
+};
+
+export function Picker({ visible, title, onClose, children }: PickerProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
 
@@ -37,8 +34,8 @@ export function PickerModal({
           onPress={(e) => e.stopPropagation()}
           style={{
             backgroundColor: colors.background,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
+            borderTopLeftRadius: 4,
+            borderTopRightRadius: 4,
             paddingBottom: Math.max(insets.bottom, 16),
             maxHeight: "60%",
           }}
@@ -75,7 +72,17 @@ export function PickerModal({
   );
 }
 
+Picker.displayName = "Picker";
+
 // ── PickerOption ───────────────────────────────────────────────────
+
+export type PickerOptionProps = ViewProps & {
+  label: string;
+  description?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  isActive: boolean;
+  onPress: () => void;
+};
 
 export function PickerOption({
   label,
@@ -83,13 +90,8 @@ export function PickerOption({
   icon,
   isActive,
   onPress,
-}: {
-  label: string;
-  description?: string;
-  icon?: keyof typeof Ionicons.glyphMap;
-  isActive: boolean;
-  onPress: () => void;
-}) {
+  ...props
+}: PickerOptionProps) {
   const colors = useColors();
 
   return (
@@ -103,6 +105,7 @@ export function PickerOption({
         gap: 10,
         backgroundColor: isActive ? colors.surfaceSecondary : "transparent",
       }}
+      {...props}
     >
       {icon && (
         <Ionicons
@@ -143,9 +146,15 @@ export function PickerOption({
   );
 }
 
-// ── PickerSectionHeader ────────────────────────────────────────────
+PickerOption.displayName = "PickerOption";
 
-export function PickerSectionHeader({ title }: { title: string }) {
+// ── PickerSection ──────────────────────────────────────────────────
+
+export type PickerSectionProps = {
+  title: string;
+};
+
+export function PickerSection({ title }: PickerSectionProps) {
   const colors = useColors();
 
   return (
@@ -166,3 +175,5 @@ export function PickerSectionHeader({ title }: { title: string }) {
     </Text>
   );
 }
+
+PickerSection.displayName = "PickerSection";

@@ -549,6 +549,7 @@ export function useSession(sessionId: string) {
   // Slow poll (5s) while idle, fast poll (2s) after sending a message.
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sawBusy = useRef(false);
+  const isFastPolling = useRef(false);
   const messageCountAtSend = useRef(0);
 
   const stopPolling = useCallback(() => {
@@ -559,9 +560,22 @@ export function useSession(sessionId: string) {
   }, []);
 
   const pollOnce = useCallback(async () => {
+    // When SSE is alive and we're not in fast-polling mode (post-send),
+    // skip the full poll — SSE handles real-time updates. Only do a
+    // lightweight status check as a health probe.
+    if (sseAlive.current && !isFastPolling.current) {
+      try {
+        const client = getClient();
+        const statusRes = await client.session.status();
+        const status = statusRes.data?.[sessionId] as SessionStatus | undefined;
+        if (status) setSessionStatus(status);
+      } catch { /* ignore — SSE is primary */ }
+      return;
+    }
+
+    // Full poll: SSE is down OR fast-polling after sending a message
     try {
       const client = getClient();
-      // Fetch status + messages + interactions all in parallel
       const [statusRes, msgRes, qRes, pRes] = await Promise.all([
         client.session.status(),
         client.session.messages({ sessionID: sessionId }),
@@ -597,6 +611,7 @@ export function useSession(sessionId: string) {
         if (!isBusy && sawBusy.current && gotReply) {
           console.log('[Poll] busy→idle with reply, switching to idle polling');
           sawBusy.current = false;
+          isFastPolling.current = false;
           fetchTitle();
           stopPolling();
           pollRef.current = setInterval(pollOnce, 5000);
@@ -618,6 +633,7 @@ export function useSession(sessionId: string) {
 
   const startFastPolling = useCallback(() => {
     console.log('[Poll] switching to fast polling (2s)');
+    isFastPolling.current = true;
     stopPolling();
     pollOnce();
     pollRef.current = setInterval(pollOnce, 2000);
@@ -677,6 +693,7 @@ export function useSession(sessionId: string) {
             setError(errMsg);
           }
           // Restart idle polling since we stopped it before promptAsync
+          isFastPolling.current = false;
           pollRef.current = setInterval(pollOnce, 5000);
           return;
         }
@@ -687,6 +704,7 @@ export function useSession(sessionId: string) {
       } catch (e) {
         setError((e as Error).message);
         // Restart idle polling since we stopped it before promptAsync
+        isFastPolling.current = false;
         pollRef.current = setInterval(pollOnce, 5000);
       } finally {
         setSending(false);

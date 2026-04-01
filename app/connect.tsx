@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { withUniwind } from "uniwind";
 import { Logo } from "@/components/logo";
-import { Logomark } from "@/components/logomark";
 import {
   addServer,
   getLastUsedServer,
@@ -22,12 +21,13 @@ import {
 const StyledIonicons = withUniwind(Ionicons);
 
 export default function ConnectScreen() {
-  if (getLastUsedServer()) {
-    return <Redirect href="/" />;
-  }
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
   const [error, setError] = useState("");
+
+  if (getLastUsedServer()) {
+    return <Redirect href="/" />;
+  }
 
   function handleConnect() {
     const trimmedUrl = url.trim();

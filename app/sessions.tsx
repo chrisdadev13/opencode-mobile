@@ -15,7 +15,6 @@ import { LeftSheet } from "@/components/left-sheet";
 import { Logomark } from "@/components/logomark";
 import { Spinner } from "@/components/spinner";
 import { blue, Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import {
   useSessionStatuses,
   useSessions,
@@ -39,9 +38,9 @@ function formatTime(timestamp: number): string {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function getStatusColor(isDark: boolean): { busy: string; error: string } {
+function getStatusColor(): { busy: string; error: string } {
   return {
-    busy: (isDark ? blue.dark : blue.light)[8],
+    busy: blue.dark[8],
     error: "#ef4444",
   };
 }
@@ -103,12 +102,10 @@ function groupByTime(sessions: Session[]): GroupedSessions {
 
 function SessionStatusIcon({
   status,
-  isDark,
 }: {
   status: SessionStatus | undefined;
-  isDark: boolean;
 }) {
-  const statusColors = getStatusColor(isDark);
+  const statusColors = getStatusColor();
   if (!status || status.type === "idle") {
     return (
       <View
@@ -143,8 +140,7 @@ export default function SessionsScreen() {
   }>();
 
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = Colors.dark;
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [groupMode, setGroupMode] = useState<GroupMode>("status");
@@ -324,10 +320,7 @@ export default function SessionsScreen() {
                           className="flex-row items-center flex-1"
                           style={{ gap: 8 }}
                         >
-                          <SessionStatusIcon
-                            status={sessionStatus}
-                            isDark={colorScheme === "dark"}
-                          />
+                          <SessionStatusIcon status={sessionStatus} />
                           <Text
                             className="text-foreground text-sm flex-1"
                             style={{ fontFamily: Fonts.sans }}
@@ -510,10 +503,7 @@ export default function SessionsScreen() {
                           className="flex-row items-center"
                           style={{ gap: 8 }}
                         >
-                          <SessionStatusIcon
-                            status={sessionStatus}
-                            isDark={colorScheme === "dark"}
-                          />
+                          <SessionStatusIcon status={sessionStatus} />
                           <Text
                             className="text-foreground text-sm flex-1"
                             style={{ fontFamily: Fonts.sans }}

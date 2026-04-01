@@ -38,12 +38,14 @@ export const Colors = {
     icon: '#a3a3a3',
     tabIconDefault: '#a3a3a3',
     tabIconSelected: '#e5e5e5',
-    surface: '#2d2d2d',
+    surface: '#2a2a2a',
     surfaceSecondary: '#3f3f3f',
     border: 'rgba(255, 255, 255, 0.1)',
     muted: '#a3a3a3',
     accent: '#e5e5e5',
     destructive: '#ef4444',
+    pink: '#e55b7a',
+    yellow: '#f5a623',
   },
 };
 
