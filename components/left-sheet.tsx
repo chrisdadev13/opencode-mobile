@@ -7,6 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useTheme } from "@/contexts/theme-context";
 
 const DRAWER_WIDTH = (Dimensions.get("window").width || 375) * 0.9;
 const TIMING_CONFIG = { duration: 250, easing: Easing.out(Easing.cubic) };
@@ -18,6 +19,7 @@ type LeftSheetProps = {
 };
 
 export function LeftSheet({ open, onClose, children }: LeftSheetProps) {
+  const { colors } = useTheme();
   const translateX = useSharedValue(-DRAWER_WIDTH);
   const overlayOpacity = useSharedValue(0);
 
@@ -48,8 +50,7 @@ export function LeftSheet({ open, onClose, children }: LeftSheetProps) {
         />
       </Animated.View>
       <Animated.View
-        style={[styles.drawer, drawerStyle]}
-        className="bg-surface"
+        style={[styles.drawer, drawerStyle, { backgroundColor: colors.surface }]}
       >
         {children}
       </Animated.View>

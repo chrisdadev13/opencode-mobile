@@ -48,8 +48,8 @@ export function SessionHeader({
         </Pressable>
 
         <Text
-          className="text-foreground flex-1"
-          style={{ fontFamily: Fonts.mono, fontWeight: "600", fontSize: 14 }}
+          className="flex-1"
+          style={{ fontFamily: Fonts.mono, fontWeight: "600", fontSize: 14, color: colors.text }}
           numberOfLines={1}
         >
           {title || (hasMessages || loading ? "Session" : "New Session")}

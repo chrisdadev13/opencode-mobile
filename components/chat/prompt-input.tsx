@@ -70,6 +70,7 @@ export const PromptInput = memo(function PromptInput({
   const handleSend = () => {
     if (!canSend) return;
     onSubmit(value.trim());
+    setValue("");
   };
 
   const contextValue = useMemo(
@@ -268,7 +269,7 @@ export function PromptInputToolbarItem({
 
   const textColor =
     variant === "accent"
-      ? colors.pink
+      ? colors.primary
       : variant === "bold"
         ? colors.text
         : colors.muted;

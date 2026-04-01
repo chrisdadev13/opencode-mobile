@@ -28,14 +28,14 @@ export function StatusBadge({ isBusy, onStop }: StatusBadgeProps) {
             width: 6,
             height: 6,
             borderRadius: 3,
-            backgroundColor: "#f59e0b",
+            backgroundColor: colors.warning,
           }}
         />
         <Text
           style={{
             fontFamily: Fonts.mono,
             fontSize: 11,
-            color: "#ef4444",
+            color: colors.destructive,
             fontWeight: "500",
           }}
         >
@@ -60,7 +60,7 @@ export function StatusBadge({ isBusy, onStop }: StatusBadgeProps) {
           width: 6,
           height: 6,
           borderRadius: 3,
-          backgroundColor: "#22c55e",
+          backgroundColor: colors.success,
         }}
       />
       <Text

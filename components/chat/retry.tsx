@@ -25,7 +25,7 @@ export function Retry({ part, style, ...props }: RetryProps) {
       ]}
       {...props}
     >
-      <Ionicons name="warning-outline" size={14} color="#f59e0b" />
+      <Ionicons name="warning-outline" size={14} color={colors.warning} />
       <View style={{ flex: 1 }}>
         <Text
           style={{
