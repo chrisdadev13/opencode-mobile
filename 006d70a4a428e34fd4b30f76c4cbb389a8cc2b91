@@ -1,0 +1,92 @@
+components/chat/shimmer.tsx
+  e7cfd0b518f89a41 53
+app/connect.tsx
+  e7cfd0b518f89a41 14,28,65-66,78,91-92,108-109,115,125-127,135
+constants/themes.ts
+  e7cfd0b518f89a41 1-452
+components/chat/reasoning.tsx
+  e7cfd0b518f89a41 159,171
+components/chat/prompt-input.tsx
+  b5e7121162bc5034 73
+  e7cfd0b518f89a41 272
+components/chat/confirmation.tsx
+  e7cfd0b518f89a41 48,82
+components/left-sheet.tsx
+  e7cfd0b518f89a41 10,22,53
+app/session/[id].tsx
+  e7cfd0b518f89a41 257,271
+  b5e7121162bc5034 188
+contexts/theme-context.tsx
+  e7cfd0b518f89a41 1-71
+components/chat/retry.tsx
+  e7cfd0b518f89a41 28
+app/sessions.tsx
+  e7cfd0b518f89a41 17-18,42,101,104,121,128,130,140,165,175-176,196-197,216-217,234,241,260,262-263,268,274,280-281,315,317-318,325-326,350,358,365
+  93dd04d474a38413 14,183-185
+components/chat/session-header.tsx
+  e7cfd0b518f89a41 51-52
+app/_layout.tsx
+  e7cfd0b518f89a41 4,13,19-56,66-68
+components/chat/message.tsx
+  e7cfd0b518f89a41 105,127,135-136
+components/chat/use-colors.ts
+  e7cfd0b518f89a41 1-2,4,7
+components/chat/status-badge.tsx
+  e7cfd0b518f89a41 31,38,63
+components/chat/changes-tab.tsx
+  e7cfd0b518f89a41 62,78-79,84-85,96,106,122-123,133
+components/chat/question.tsx
+  e7cfd0b518f89a41 132
+app/index.tsx
+  e7cfd0b518f89a41 15-16,63,69,89,92,101-102,108-109,135,179-180,186-187,201-202,204-212,214,216-219,221-277,280,284-285,294,298-299,316
+components/chat/tool.tsx
+  e7cfd0b518f89a41 38-39,45-46,94-98,106-113,178-179
+components/chat/use-markdown-styles.ts
+  e7cfd0b518f89a41 94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.3",
+  "base_commit_sha": "006d70a4a428e34fd4b30f76c4cbb389a8cc2b91",
+  "prompts": {
+    "93dd04d474a38413": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f6dd70fa-f0ab-4c18-a886-350b3b78919b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 170,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "b5e7121162bc5034": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc35276b-29be-4c93-8a21-9222b2267190",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 1,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    },
+    "e7cfd0b518f89a41": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed7a5082-8b87-4a2c-b478-3715cbaa44bc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris",
+      "messages": [],
+      "total_additions": 803,
+      "total_deletions": 198,
+      "accepted_lines": 766,
+      "overriden_lines": 0
+    }
+  }
+}
