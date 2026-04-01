@@ -9,9 +9,9 @@ export function useMarkdownStyles() {
     () =>
       ({
         body: {
-          fontFamily: Fonts.sans,
+          fontFamily: Fonts.mono,
           fontSize: 14,
-          lineHeight: 22,
+          lineHeight: 20,
           color: colors.text,
         },
         heading1: {
@@ -91,7 +91,7 @@ export function useMarkdownStyles() {
           borderRadius: 4,
         },
         link: {
-          color: colors.accent,
+          color: "#f5a623",
           textDecorationLine: "underline",
         },
         list_item: {

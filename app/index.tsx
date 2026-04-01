@@ -13,7 +13,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeftSheet } from "@/components/left-sheet";
 import { Logo } from "@/components/logo";
 import { Colors, Fonts } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useProjects } from "@/hooks/use-opencode";
 import { getClient, resetClient } from "@/lib/opencode";
 import { clearAllServers, getLastUsedServer } from "@/lib/servers";
@@ -52,7 +51,6 @@ function getProjectName(worktree: string, name?: string): string {
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const { projects: allProjects, loading, error, refresh } = useProjects();
@@ -61,7 +59,7 @@ export default function HomeScreen() {
     return <Redirect href="/connect" />;
   }
 
-  const colors = Colors[colorScheme ?? "light"];
+  const colors = Colors.dark;
   const server = getLastUsedServer();
 
   const projects = allProjects.filter((p) => p.worktree !== "/");

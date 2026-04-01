@@ -268,7 +268,8 @@ export default function SessionScreen() {
               style={{ paddingBottom: Math.max(insets.bottom, 18) }}
             >
               <PromptInput
-                className="bg-surface rounded-4xl border border-border z-50"
+                className="bg-surface"
+                style={{ borderLeftWidth: 3, borderLeftColor: "#e55b7a" }}
                 value={inputText}
                 onValueChange={setInputText}
                 onSubmit={handleSend}
@@ -276,25 +277,24 @@ export default function SessionScreen() {
               >
                 <PromptInputTextarea />
                 <PromptInputActions>
-                  <PromptInputAction type="attach" />
                   <PromptInputAction type="send" />
                 </PromptInputActions>
               </PromptInput>
               <PromptInputToolbar>
                 <PromptInputToolbarItem
                   label={activeAgent === "plan" ? "Plan" : "Build"}
+                  variant="accent"
                   onPress={() => setAgentPickerVisible(true)}
                 />
                 <PromptInputToolbarItem
                   label={activeModelLabel}
-                  icon="flash"
+                  variant="bold"
                   onPress={() => setModelPickerVisible(true)}
                 />
                 <PromptInputToolbarItem
                   label={activeEffortLabel}
-                  icon="speedometer-outline"
+                  variant="muted"
                   onPress={() => setEffortPickerVisible(true)}
-                  hasChevron={activeVariants.length > 0}
                   disabled={activeVariants.length === 0}
                 />
               </PromptInputToolbar>

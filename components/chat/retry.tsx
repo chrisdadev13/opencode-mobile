@@ -13,12 +13,12 @@ export function Retry({ part, style, ...props }: RetryProps) {
 
   return (
     <View
-      className="mt-2 flex-row items-center rounded-lg px-3 py-2"
+      className="mt-2 flex-row items-center px-3 py-2"
       style={[
         {
           backgroundColor: colors.surfaceSecondary,
-          borderWidth: 1,
-          borderColor: colors.destructive + "33",
+          borderLeftWidth: 3,
+          borderLeftColor: colors.destructive,
           gap: 8,
         },
         style,

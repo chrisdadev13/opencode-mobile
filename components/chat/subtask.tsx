@@ -13,12 +13,12 @@ export function Subtask({ part, style, ...props }: SubtaskProps) {
 
   return (
     <View
-      className="mt-2 rounded-lg px-3 py-2"
+      className="mt-2 px-3 py-2"
       style={[
         {
           backgroundColor: colors.surfaceSecondary,
-          borderWidth: 1,
-          borderColor: colors.border,
+          borderLeftWidth: 3,
+          borderLeftColor: colors.muted,
         },
         style,
       ]}

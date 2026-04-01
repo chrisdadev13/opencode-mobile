@@ -21,8 +21,6 @@ export function StatusBadge({ isBusy, onStop }: StatusBadgeProps) {
           gap: 5,
           height: 28,
           paddingHorizontal: 10,
-          borderRadius: 14,
-          backgroundColor: "#fef2f2",
         }}
       >
         <View
@@ -55,8 +53,6 @@ export function StatusBadge({ isBusy, onStop }: StatusBadgeProps) {
         gap: 5,
         height: 28,
         paddingHorizontal: 10,
-        borderRadius: 14,
-        backgroundColor: colors.surfaceSecondary,
       }}
     >
       <View

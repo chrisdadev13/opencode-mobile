@@ -34,8 +34,8 @@ export function Picker({ visible, title, onClose, children }: PickerProps) {
           onPress={(e) => e.stopPropagation()}
           style={{
             backgroundColor: colors.background,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
+            borderTopLeftRadius: 4,
+            borderTopRightRadius: 4,
             paddingBottom: Math.max(insets.bottom, 16),
             maxHeight: "60%",
           }}

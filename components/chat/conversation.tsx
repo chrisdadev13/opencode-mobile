@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { forwardRef, type ReactNode } from "react";
 import { ScrollView, Text, View, type ScrollViewProps, type ViewProps } from "react-native";
-import { Logomark } from "@/components/logomark";
+import { Logo } from "@/components/logo";
 import { Fonts } from "@/constants/theme";
 import type { useProjectInfo } from "@/hooks/use-opencode";
 import { useColors } from "./use-colors";
@@ -64,18 +64,7 @@ export function ConversationEmptyState({
       style={{ gap: 16 }}
       {...props}
     >
-      <Logomark size={36} />
-
-      <Text
-        style={{
-          fontFamily: Fonts.sans,
-          fontSize: 22,
-          fontWeight: "600",
-          color: colors.text,
-        }}
-      >
-        Build anything
-      </Text>
+      <Logo width={240} />
 
       {projectInfo?.path ? (
         <Text

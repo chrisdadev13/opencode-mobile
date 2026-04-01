@@ -14,7 +14,6 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  type CollapsibleProps,
 } from "@/components/ui/collapsible";
 import { useControllableState } from "@/hooks/use-controllable-state";
 import { Fonts } from "@/constants/theme";
@@ -46,7 +45,7 @@ export const useReasoning = () => {
 const AUTO_CLOSE_DELAY = 1000;
 const MS_IN_S = 1000;
 
-export type ReasoningProps = Omit<CollapsibleProps, "open" | "onOpenChange"> & {
+export type ReasoningProps = ViewProps & {
   isStreaming?: boolean;
   open?: boolean;
   defaultOpen?: boolean;
@@ -81,7 +80,6 @@ export const Reasoning = memo(function Reasoning({
   const [hasAutoClosed, setHasAutoClosed] = useState(false);
   const startTimeRef = useRef<number | null>(null);
 
-  // Track when streaming starts and compute duration
   useEffect(() => {
     if (isStreaming) {
       hasEverStreamedRef.current = true;
@@ -94,14 +92,12 @@ export const Reasoning = memo(function Reasoning({
     }
   }, [isStreaming, setDuration]);
 
-  // Auto-open when streaming starts
   useEffect(() => {
     if (isStreaming && !isOpen && !isExplicitlyClosed) {
       setIsOpen(true);
     }
   }, [isStreaming, isOpen, setIsOpen, isExplicitlyClosed]);
 
-  // Auto-close when streaming ends (once only)
   useEffect(() => {
     if (
       hasEverStreamedRef.current &&
@@ -142,72 +138,59 @@ Reasoning.displayName = "Reasoning";
 
 // ── ReasoningTrigger ───────────────────────────────────────────────
 
-export type ReasoningTriggerProps = ViewProps & {
-  children?: React.ReactNode;
-};
+export type ReasoningTriggerProps = ViewProps;
 
-export const ReasoningTrigger = memo(function ReasoningTrigger({
-  children,
-  ...props
-}: ReasoningTriggerProps) {
+export const ReasoningTrigger = memo(function ReasoningTrigger(
+  props: ReasoningTriggerProps,
+) {
   const { isStreaming, isOpen, duration } = useReasoning();
   const colors = useColors();
 
-  const label = isStreaming
-    ? undefined // will use Shimmer
-    : duration !== undefined
-      ? `${duration}s`
-      : null;
-
   return (
     <CollapsibleTrigger>
-      {children ?? (
-        <View
-          className="flex-row items-center mb-1"
-          style={{ gap: 6 }}
-          {...props}
-        >
-          <Ionicons name="bulb-outline" size={14} color={colors.muted} />
-          {isStreaming ? (
-            <Shimmer
-              style={{
-                fontFamily: Fonts.sans,
-                fontSize: 13,
-                fontWeight: "600",
-              }}
-            >
-              Thinking...
-            </Shimmer>
-          ) : (
-            <Text
-              style={{
-                fontFamily: Fonts.sans,
-                fontSize: 13,
-                fontWeight: "600",
-                color: colors.muted,
-              }}
-            >
-              Thinking
-            </Text>
-          )}
-          {label && (
-            <Text
-              style={{
-                fontFamily: Fonts.mono,
-                fontSize: 11,
-                color: colors.muted,
-              }}
-            >
-              {label}
-            </Text>
-          )}
-          <Ionicons
-            name={isOpen ? "chevron-down" : "chevron-forward"}
-            size={12}
-            color={colors.muted}
-          />
-        </View>
-      )}
+      <View className="flex-row items-center mb-1" style={{ gap: 6 }} {...props}>
+        {isStreaming ? (
+          <Shimmer
+            style={{
+              fontFamily: Fonts.mono,
+              fontSize: 13,
+              fontStyle: "italic",
+              fontWeight: "600",
+              color: colors.yellow,
+            }}
+          >
+            Thinking:
+          </Shimmer>
+        ) : (
+          <Text
+            style={{
+              fontFamily: Fonts.mono,
+              fontSize: 13,
+              fontStyle: "italic",
+              fontWeight: "600",
+              color: colors.yellow,
+            }}
+          >
+            Thinking:
+          </Text>
+        )}
+        {duration !== undefined && (
+          <Text
+            style={{
+              fontFamily: Fonts.mono,
+              fontSize: 11,
+              color: colors.muted,
+            }}
+          >
+            {duration}s
+          </Text>
+        )}
+        <Ionicons
+          name={isOpen ? "chevron-down" : "chevron-forward"}
+          size={12}
+          color={colors.muted}
+        />
+      </View>
     </CollapsibleTrigger>
   );
 });
@@ -230,14 +213,14 @@ export const ReasoningContent = memo(function ReasoningContent({
   return (
     <CollapsibleContent>
       <View
-        className="mt-1 ml-1 pl-2"
-        style={{ borderLeftWidth: 2, borderLeftColor: colors.border }}
+        className="ml-1 pl-2"
+        style={{ borderLeftWidth: 2, borderLeftColor: colors.muted }}
         {...props}
       >
         {children ?? (
           <Text
             style={{
-              fontFamily: Fonts.sans,
+              fontFamily: Fonts.mono,
               fontSize: 13,
               fontStyle: "italic",
               color: colors.muted,
@@ -256,7 +239,6 @@ export const ReasoningContent = memo(function ReasoningContent({
 ReasoningContent.displayName = "ReasoningContent";
 
 // ── Convenience: ReasoningPart ─────────────────────────────────────
-// Drop-in replacement that renders from a ReasoningPartType
 
 export type ReasoningPartProps = ViewProps & {
   part: ReasoningPartType;

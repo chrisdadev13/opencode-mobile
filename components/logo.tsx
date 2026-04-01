@@ -1,17 +1,13 @@
 import Svg, { Path, G, Mask, Rect, Defs, ClipPath } from 'react-native-svg';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type LogoProps = {
   width?: number;
 };
 
 export function Logo({ width = 320 }: LogoProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-
-  const inner = isDark ? '#4B4646' : '#CFCECD';
-  const open = isDark ? '#B7B1B1' : '#656363';
-  const code = isDark ? '#F1ECEC' : '#211E1E';
+  const inner = '#4B4646';
+  const open = '#B7B1B1';
+  const code = '#F1ECEC';
 
   const height = width * (115 / 640);
 

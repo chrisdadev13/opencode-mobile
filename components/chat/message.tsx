@@ -72,7 +72,7 @@ export const Message = memo(function Message({
   return (
     <MessageContext.Provider value={contextValue}>
       <View
-        className={`px-4 mb-6 ${from === "user" ? "items-end" : "items-start"} ${className ?? ""}`}
+        className={`px-4 mb-4 items-start ${className ?? ""}`}
         {...props}
       >
         {children}
@@ -93,15 +93,17 @@ export const MessageContent = memo(function MessageContent({
   ...props
 }: MessageContentProps) {
   const { isUser } = useMessage();
+  const colors = useColors();
 
   return (
-    <View style={{ maxWidth: isUser ? "85%" : "100%" }}>
+    <View style={{ width: "100%" }}>
       <View
-        className={`rounded-xl px-3 py-2 ${
-          isUser
-            ? "bg-accent-foreground border border-border"
-            : "bg-transparent"
-        } ${className ?? ""}`}
+        className={`px-3 py-2 ${className ?? ""}`}
+        style={{
+          backgroundColor: isUser ? colors.surface : "transparent",
+          borderLeftWidth: 3,
+          borderLeftColor: isUser ? colors.yellow : "#3f3f3f",
+        }}
         {...props}
       >
         {children}
@@ -130,7 +132,7 @@ export const MessageText = memo(function MessageText({
     return (
       <Text
         className="text-sm text-foreground"
-        style={{ fontFamily: Fonts.sans, lineHeight: 20 }}
+        style={{ fontFamily: Fonts.mono, lineHeight: 20 }}
         selectable
       >
         {text}

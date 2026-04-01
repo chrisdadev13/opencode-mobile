@@ -41,11 +41,11 @@ export function Confirmation({
   return (
     <ConfirmationContext.Provider value={contextValue}>
       <View
-        className={`mx-4 mb-4 rounded-xl px-4 py-3 ${className ?? ""}`}
+        className={`mx-4 mb-4 px-4 py-3 ${className ?? ""}`}
         style={{
           backgroundColor: colors.surface,
-          borderWidth: 1,
-          borderColor: "#f59e0b44",
+          borderLeftWidth: 3,
+          borderLeftColor: "#f59e0b",
         }}
         {...props}
       >

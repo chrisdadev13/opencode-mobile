@@ -125,11 +125,11 @@ export function Question({
   return (
     <QuestionContext.Provider value={contextValue}>
       <View
-        className={`mx-4 mb-4 rounded-xl px-4 py-3 ${className ?? ""}`}
+        className={`mx-4 mb-4 px-4 py-3 ${className ?? ""}`}
         style={{
           backgroundColor: colors.surface,
-          borderWidth: 1,
-          borderColor: colors.border,
+          borderLeftWidth: 3,
+          borderLeftColor: colors.pink,
         }}
         {...props}
       >

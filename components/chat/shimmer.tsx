@@ -48,9 +48,9 @@ export function Shimmer({ children, duration = 1400, style }: ShimmerProps) {
     <Animated.Text
       style={[
         {
-          fontFamily: Fonts.sans,
+          fontFamily: Fonts.mono,
           fontSize: 14,
-          color: colors.muted,
+          color: colors.yellow,
           lineHeight: 20,
         },
         style,

@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, View } from "react-native";
-import { Logomark } from "@/components/logomark";
 import { Fonts } from "@/constants/theme";
 import { SegmentedTabs } from "./segmented-tabs";
 import { StatusBadge } from "./status-badge";
@@ -33,7 +32,7 @@ export function SessionHeader({
   const colors = useColors();
 
   return (
-    <View className="px-4 pt-2 pb-3" style={{ gap: 12 }}>
+    <View className="px-4 pt-2 pb-3" style={{ gap: 10 }}>
       <View className="flex-row items-center" style={{ gap: 10 }}>
         <Pressable
           hitSlop={8}
@@ -41,19 +40,16 @@ export function SessionHeader({
           style={{
             width: 32,
             height: 32,
-            borderRadius: 10,
-            backgroundColor: colors.surfaceSecondary,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Ionicons name="chevron-back" size={18} color={colors.text} />
+          <Ionicons name="chevron-back" size={18} color={colors.muted} />
         </Pressable>
 
-        <Logomark size={16} />
         <Text
           className="text-foreground flex-1"
-          style={{ fontFamily: Fonts.sans, fontWeight: "600", fontSize: 16 }}
+          style={{ fontFamily: Fonts.mono, fontWeight: "600", fontSize: 14 }}
           numberOfLines={1}
         >
           {title || (hasMessages || loading ? "Session" : "New Session")}

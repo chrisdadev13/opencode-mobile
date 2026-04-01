@@ -96,7 +96,7 @@ export type PromptInputTextareaProps = {
 
 export const PromptInputTextarea = memo(function PromptInputTextarea({
   placeholder = "Ask anything...",
-  minHeight = 100,
+  minHeight = 48,
   maxHeight = 180,
 }: PromptInputTextareaProps) {
   const { value, setValue, isBusy, onSend } = usePromptInput();
@@ -111,7 +111,7 @@ export const PromptInputTextarea = memo(function PromptInputTextarea({
       multiline
       editable={!isBusy}
       style={{
-        fontFamily: Fonts.sans,
+        fontFamily: Fonts.mono,
         fontSize: 14,
         color: colors.text,
         paddingHorizontal: 12,
@@ -186,37 +186,16 @@ export function PromptInputAction({
           right: 8,
           width: 32,
           height: 32,
-          borderRadius: 8,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: canSend ? colors.accent : "transparent",
+          opacity: canSend ? 1 : 0.3,
         }}
       >
         <Ionicons
           name="arrow-up"
           size={18}
-          color={canSend ? colors.background : colors.muted}
+          color={colors.muted}
         />
-      </Pressable>
-    );
-  }
-
-  if (type === "attach") {
-    return (
-      <Pressable
-        hitSlop={8}
-        onPress={onPress}
-        style={{
-          position: "absolute",
-          bottom: 8,
-          left: 8,
-          width: 32,
-          height: 32,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Ionicons name={icon ?? "add"} size={20} color={colors.muted} />
       </Pressable>
     );
   }
@@ -254,8 +233,8 @@ export function PromptInputToolbar({
 }: PromptInputToolbarProps) {
   return (
     <View
-      className={`flex-row items-center px-1 pb-2 bg-background rounded-b-4xl border-x border-b border-border/70 -mt-3 z-0 ${className ?? ""}`}
-      style={{ gap: 6, paddingTop: 18 }}
+      className={`flex-row items-center px-1 pt-2 pb-2 ${className ?? ""}`}
+      style={{ gap: 8 }}
       {...props}
     >
       {children}
@@ -273,41 +252,49 @@ export type PromptInputToolbarItemProps = ViewProps & {
   onPress?: () => void;
   hasChevron?: boolean;
   disabled?: boolean;
+  variant?: "accent" | "bold" | "muted";
 };
 
 export function PromptInputToolbarItem({
   label,
   icon,
   onPress,
-  hasChevron = true,
+  hasChevron = false,
   disabled = false,
+  variant = "muted",
   ...props
 }: PromptInputToolbarItemProps) {
   const colors = useColors();
 
+  const textColor =
+    variant === "accent"
+      ? colors.pink
+      : variant === "bold"
+        ? colors.text
+        : colors.muted;
+
+  const fontWeight = variant === "bold" ? "700" : variant === "accent" ? "600" : "400";
+
   return (
     <Pressable
-      className="flex-row items-center rounded-md"
-      style={{ height: 28, paddingHorizontal: icon ? 4 : 8, gap: 4 }}
+      className="flex-row items-center"
+      style={{ height: 28, paddingHorizontal: 4, gap: 4 }}
       onPress={onPress}
       disabled={disabled}
       {...props}
     >
-      {icon && <Ionicons name={icon} size={13} color={colors.muted} />}
       <Text
-        className="text-muted"
         style={{
-          fontFamily: Fonts.sans,
+          fontFamily: Fonts.mono,
           fontSize: 13,
+          fontWeight,
+          color: textColor,
           opacity: disabled ? 0.5 : 1,
         }}
         numberOfLines={1}
       >
         {label}
       </Text>
-      {hasChevron && (
-        <Ionicons name="chevron-down" size={11} color={colors.muted} />
-      )}
     </Pressable>
   );
 }
