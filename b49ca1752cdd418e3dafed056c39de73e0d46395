@@ -1,0 +1,80 @@
+components/chat/shimmer.tsx
+  e7cfd0b518f89a41 51,53
+components/chat/subtask.tsx
+  e7cfd0b518f89a41 16,20-21
+hooks/use-color-scheme.ts
+  e7cfd0b518f89a41 1-3
+components/chat/reasoning.tsx
+  e7cfd0b518f89a41 48,143-144,151-193,216-217,223
+components/chat/picker.tsx
+  e7cfd0b518f89a41 37-38
+components/chat/retry.tsx
+  e7cfd0b518f89a41 16,20-21
+global.css
+  e7cfd0b518f89a41 8,10-11
+app/index.tsx
+  e7cfd0b518f89a41 62
+components/chat/session-header.tsx
+  e7cfd0b518f89a41 35,47,52
+components/chat/conversation.tsx
+  e7cfd0b518f89a41 4,67
+constants/theme.ts
+  e7cfd0b518f89a41 41,47-48
+components/chat/use-colors.ts
+  e7cfd0b518f89a41 3,6
+components/logo.tsx
+  e7cfd0b518f89a41 8-10
+app/_layout.tsx
+  e7cfd0b518f89a41 4-5,8,38-42,48,55
+app/session/[id].tsx
+  e7cfd0b518f89a41 271-272,286,291,296
+components/chat/confirmation.tsx
+  e7cfd0b518f89a41 44,47-48
+components/chat/question.tsx
+  e7cfd0b518f89a41 128,131-132
+app/sessions.tsx
+  e7cfd0b518f89a41 43,143,323,506
+components/chat/use-markdown-styles.ts
+  e7cfd0b518f89a41 12,14,94
+components/logomark.tsx
+  e7cfd0b518f89a41 8-9
+components/chat/prompt-input.tsx
+  e7cfd0b518f89a41 99,114,191,236-237,255,262,264,269-277,280-281,288,290-291
+components/chat/message.tsx
+  e7cfd0b518f89a41 75,96,99,101-106,135
+components/chat/segmented-tabs.tsx
+  e7cfd0b518f89a41 1,17,29-31,36-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.3",
+  "base_commit_sha": "b49ca1752cdd418e3dafed056c39de73e0d46395",
+  "prompts": {
+    "caebed98ad962275": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1c8823d7-309f-41ad-a27b-73977b8aef97",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 281,
+      "overriden_lines": 0
+    },
+    "e7cfd0b518f89a41": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ed7a5082-8b87-4a2c-b478-3715cbaa44bc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Chris",
+      "messages": [],
+      "total_additions": 358,
+      "total_deletions": 457,
+      "accepted_lines": 285,
+      "overriden_lines": 0
+    }
+  }
+}
