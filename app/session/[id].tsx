@@ -1,7 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -36,6 +37,7 @@ import {
   useProviders,
   useSession,
 } from "@/hooks/use-opencode";
+import { useWhisper } from "@/hooks/use-whisper";
 
 export default function SessionScreen() {
   const { id, directory, projectName } = useLocalSearchParams<{
@@ -85,6 +87,30 @@ export default function SessionScreen() {
   const projectInfo = useProjectInfo();
   const { providers, defaultModel } = useProviders();
 
+  const {
+    isRecording,
+    isLoading: whisperLoading,
+    downloadProgress,
+    transcription,
+    toggleRecording,
+    stopRecording,
+  } = useWhisper();
+
+  // Append live transcription to input
+  const lastTranscriptionRef = useRef("");
+  useEffect(() => {
+    if (isRecording && transcription && transcription !== lastTranscriptionRef.current) {
+      lastTranscriptionRef.current = transcription;
+      setInputText(transcription);
+    }
+  }, [isRecording, transcription]);
+
+  const handleMicPress = useCallback(async () => {
+    const result = await toggleRecording();
+    if (result) {
+      lastTranscriptionRef.current = "";
+    }
+  }, [toggleRecording]);
   const activeModel = selectedModel ?? defaultModel;
   const isBusy = sessionStatus.type === "busy";
 
@@ -277,6 +303,35 @@ export default function SessionScreen() {
               >
                 <PromptInputTextarea />
                 <PromptInputActions>
+                  {/* Mic button */}
+                  <Pressable
+                    hitSlop={8}
+                    onPress={handleMicPress}
+                    disabled={isBusy || whisperLoading}
+                    style={{
+                      position: "absolute",
+                      bottom: 8,
+                      left: 8,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: isRecording
+                        ? colors.accent
+                        : "transparent",
+                    }}
+                  >
+                    {whisperLoading ? (
+                      <ActivityIndicator size="small" color={colors.muted} />
+                    ) : (
+                      <Ionicons
+                        name={isRecording ? "mic" : "mic-outline"}
+                        size={18}
+                        color={isRecording ? colors.background : colors.muted}
+                      />
+                    )}
+                  </Pressable>
                   <PromptInputAction type="send" />
                 </PromptInputActions>
               </PromptInput>
