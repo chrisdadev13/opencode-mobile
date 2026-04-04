@@ -303,36 +303,57 @@ export default function SessionScreen() {
               >
                 <PromptInputTextarea />
                 <PromptInputActions>
-                  {/* Mic button */}
-                  <Pressable
-                    hitSlop={8}
-                    onPress={handleMicPress}
-                    disabled={isBusy || whisperLoading}
-                    style={{
-                      position: "absolute",
-                      bottom: 8,
-                      left: 8,
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: isRecording
-                        ? colors.accent
-                        : "transparent",
-                    }}
-                  >
-                    {whisperLoading ? (
-                      <ActivityIndicator size="small" color={colors.muted} />
-                    ) : (
+                  {isRecording ? (
+                    <Pressable
+                      hitSlop={8}
+                      onPress={stopRecording}
+                      style={{
+                        position: "absolute",
+                        bottom: 8,
+                        right: 8,
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: colors.accent,
+                      }}
+                    >
                       <Ionicons
-                        name={isRecording ? "mic" : "mic-outline"}
+                        name="stop"
                         size={18}
-                        color={isRecording ? colors.background : colors.muted}
+                        color={colors.background}
                       />
-                    )}
-                  </Pressable>
-                  <PromptInputAction type="send" />
+                    </Pressable>
+                  ) : inputText.trim() === "" ? (
+                    <Pressable
+                      hitSlop={8}
+                      onPress={handleMicPress}
+                      disabled={isBusy || whisperLoading}
+                      style={{
+                        position: "absolute",
+                        bottom: 8,
+                        right: 8,
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {whisperLoading ? (
+                        <ActivityIndicator size="small" color={colors.muted} />
+                      ) : (
+                        <Ionicons
+                          name="mic-outline"
+                          size={18}
+                          color={colors.muted}
+                        />
+                      )}
+                    </Pressable>
+                  ) : (
+                    <PromptInputAction type="send" />
+                  )}
                 </PromptInputActions>
               </PromptInput>
               <PromptInputToolbar>
