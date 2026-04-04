@@ -450,7 +450,7 @@ export default function SessionsScreen() {
               borderRadius: 28,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: blue.dark[8],
+              backgroundColor: colors.primary,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.3,
