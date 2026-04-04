@@ -35,15 +35,15 @@ function ToolHeaderInner({ label, detail, ...props }: ToolHeaderProps) {
   return (
     <View className="flex-row items-center" style={{ gap: 6 }} {...props}>
       <Text
-        className="text-foreground text-sm"
-        style={{ fontFamily: Fonts.sans, fontWeight: "600" }}
+        className="text-sm"
+        style={{ fontFamily: Fonts.sans, fontWeight: "600", color: colors.text }}
       >
         {label}
       </Text>
       {detail ? (
         <Text
-          className="text-muted text-sm"
-          style={{ fontFamily: Fonts.sans, flexShrink: 1 }}
+          className="text-sm"
+          style={{ fontFamily: Fonts.sans, flexShrink: 1, color: colors.muted }}
           numberOfLines={1}
         >
           {detail}
@@ -91,11 +91,11 @@ export type ToolStatusBadgeProps = ViewProps & {
   status: "running" | "completed" | "error" | "pending";
 };
 
-const statusConfig = {
-  running: { color: "#f59e0b", label: "Running" },
-  completed: { color: "#22c55e", label: "Done" },
-  error: { color: "#ef4444", label: "Error" },
-  pending: { color: "#8b8b8b", label: "Pending" },
+const statusLabels = {
+  running: "Running",
+  completed: "Done",
+  error: "Error",
+  pending: "Pending",
 };
 
 export function ToolStatusBadge({
@@ -103,7 +103,14 @@ export function ToolStatusBadge({
   style,
   ...props
 }: ToolStatusBadgeProps) {
-  const config = statusConfig[status];
+  const colors = useColors();
+  const statusColors = {
+    running: colors.warning,
+    completed: colors.success,
+    error: colors.destructive,
+    pending: colors.muted,
+  };
+  const config = { color: statusColors[status], label: statusLabels[status] };
 
   return (
     <View
@@ -168,8 +175,8 @@ export function ToolGroupPart({ group, style, ...props }: ToolGroupPartProps) {
               style={{ gap: 6 }}
             >
               <Text
-                className="text-muted text-xs"
-                style={{ fontFamily: Fonts.mono, flexShrink: 1 }}
+                className="text-xs"
+                style={{ fontFamily: Fonts.mono, flexShrink: 1, color: colors.muted }}
                 numberOfLines={1}
               >
                 {title}

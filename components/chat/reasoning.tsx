@@ -156,7 +156,7 @@ export const ReasoningTrigger = memo(function ReasoningTrigger(
               fontSize: 13,
               fontStyle: "italic",
               fontWeight: "600",
-              color: colors.yellow,
+              color: colors.accent,
             }}
           >
             Thinking:
@@ -168,7 +168,7 @@ export const ReasoningTrigger = memo(function ReasoningTrigger(
               fontSize: 13,
               fontStyle: "italic",
               fontWeight: "600",
-              color: colors.yellow,
+              color: colors.accent,
             }}
           >
             Thinking:

@@ -12,7 +12,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LeftSheet } from "@/components/left-sheet";
 import { Logo } from "@/components/logo";
-import { Colors, Fonts } from "@/constants/theme";
+import { Fonts } from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
 import { useProjects } from "@/hooks/use-opencode";
 import { getClient, resetClient } from "@/lib/opencode";
 import { clearAllServers, getLastUsedServer } from "@/lib/servers";
@@ -59,13 +60,13 @@ export default function HomeScreen() {
     return <Redirect href="/connect" />;
   }
 
-  const colors = Colors.dark;
+  const { colors, themeId, themes, setTheme } = useTheme();
   const server = getLastUsedServer();
 
   const projects = allProjects.filter((p) => p.worktree !== "/");
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <View className="flex-1" style={{ paddingTop: insets.top, backgroundColor: colors.background }}>
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3">
         <Pressable hitSlop={8} onPress={() => setMenuOpen(true)}>
@@ -85,10 +86,10 @@ export default function HomeScreen() {
               width: 8,
               height: 8,
               borderRadius: 4,
-              backgroundColor: error ? "#ef4444" : "#22c55e",
+              backgroundColor: error ? colors.destructive : colors.success,
             }}
           />
-          <Text className="text-muted text-sm">
+          <Text className="text-sm" style={{ color: colors.muted }}>
             {server?.label || "Local Server"}
           </Text>
         </View>
@@ -97,15 +98,15 @@ export default function HomeScreen() {
       {/* Projects heading */}
       <View className="px-6 flex-row items-center mb-2" style={{ gap: 6 }}>
         <Text
-          className="text-foreground text-sm"
-          style={{ fontFamily: Fonts.sans, fontWeight: "500" }}
+          className="text-sm"
+          style={{ fontFamily: Fonts.sans, fontWeight: "500", color: colors.text }}
         >
           Recent Projects
         </Text>
         {!loading && projects.length > 0 && (
           <Text
-            className="text-muted text-xs"
-            style={{ fontFamily: Fonts.sans }}
+            className="text-xs"
+            style={{ fontFamily: Fonts.sans, color: colors.muted }}
           >
             ({projects.length})
           </Text>
@@ -124,14 +125,14 @@ export default function HomeScreen() {
           </View>
         ) : error ? (
           <View className="items-center py-8">
-            <Text className="text-muted text-sm mb-3">{error}</Text>
+            <Text className="text-sm mb-3" style={{ color: colors.muted }}>{error}</Text>
             <Button variant="outline" size="sm" onPress={refresh}>
               <Button.Label>Retry</Button.Label>
             </Button>
           </View>
         ) : projects.length === 0 ? (
           <View className="items-center py-8">
-            <Text className="text-muted text-sm">No projects found</Text>
+            <Text className="text-sm" style={{ color: colors.muted }}>No projects found</Text>
           </View>
         ) : (
           projects.map((project) => {
@@ -175,15 +176,15 @@ export default function HomeScreen() {
               >
                 <View className="flex-row items-center justify-between">
                   <Text
-                    className="text-foreground text-[14px] flex-1"
-                    style={{ fontFamily: Fonts.mono, fontWeight: "300" }}
+                    className="text-[14px] flex-1"
+                    style={{ fontFamily: Fonts.mono, fontWeight: "300", color: colors.text }}
                     numberOfLines={1}
                   >
                     {abbreviatePath(project.worktree)}
                   </Text>
                   <Text
-                    className="text-muted text-xs ml-4"
-                    style={{ flexShrink: 0, fontFamily: Fonts.mono }}
+                    className="text-xs ml-4"
+                    style={{ flexShrink: 0, fontFamily: Fonts.mono, color: colors.muted }}
                   >
                     {formatTime(project.time.updated)}
                   </Text>
@@ -197,34 +198,91 @@ export default function HomeScreen() {
       {/* Left Sheet */}
       <LeftSheet open={menuOpen} onClose={() => setMenuOpen(false)}>
         <View className="flex-1" style={{ paddingTop: insets.top }}>
-          <View className="flex-1 items-center justify-center">
+          {/* Theme picker */}
+          <View className="px-4 pt-4 pb-2">
             <Text
-              className="text-foreground text-base"
-              style={{ fontFamily: Fonts.sans, fontWeight: "600" }}
+              style={{
+                fontFamily: Fonts.mono,
+                fontSize: 11,
+                fontWeight: "600",
+                color: colors.muted,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+                marginBottom: 8,
+              }}
             >
-              No projects open
+              Theme
             </Text>
-            <Text
-              className="text-muted text-sm mt-2"
-              style={{ fontFamily: Fonts.sans }}
+            <ScrollView
+              horizontal={false}
+              style={{ maxHeight: 200 }}
+              showsVerticalScrollIndicator={false}
             >
-              Open a project to get started
-            </Text>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-5"
-              onPress={() => setMenuOpen(false)}
-            >
-              <Ionicons name="open-outline" size={16} color={colors.text} />
-              <Button.Label>Open project</Button.Label>
-            </Button>
+              {themes.map((t) => (
+                <Pressable
+                  key={t.id}
+                  onPress={() => setTheme(t.id)}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 8,
+                    paddingHorizontal: 8,
+                    gap: 10,
+                    backgroundColor:
+                      themeId === t.id ? colors.surfaceSecondary : "transparent",
+                  }}
+                >
+                  {/* Color preview dots */}
+                  <View style={{ flexDirection: "row", gap: 3 }}>
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: t.colors.primary,
+                      }}
+                    />
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: t.colors.accent,
+                      }}
+                    />
+                    <View
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: t.colors.secondary,
+                      }}
+                    />
+                  </View>
+                  <Text
+                    style={{
+                      fontFamily: Fonts.mono,
+                      fontSize: 13,
+                      color: themeId === t.id ? colors.text : colors.muted,
+                      fontWeight: themeId === t.id ? "600" : "400",
+                    }}
+                  >
+                    {t.label}
+                  </Text>
+                  {themeId === t.id && (
+                    <Ionicons name="checkmark" size={14} color={colors.primary} />
+                  )}
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
+
+          <View className="flex-1" />
 
           {/* Server info + disconnect */}
           <View
-            className="px-4 py-3 border-t border-border"
-            style={{ paddingBottom: insets.bottom + 8 }}
+            className="px-4 py-3 border-t"
+            style={{ paddingBottom: insets.bottom + 8, borderColor: colors.border }}
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center gap-2 flex-1">
@@ -233,12 +291,12 @@ export default function HomeScreen() {
                     width: 7,
                     height: 7,
                     borderRadius: 4,
-                    backgroundColor: error ? "#ef4444" : "#22c55e",
+                    backgroundColor: error ? colors.destructive : colors.success,
                   }}
                 />
                 <Text
-                  className="text-foreground text-sm"
-                  style={{ fontFamily: Fonts.sans, fontWeight: "500" }}
+                  className="text-sm"
+                  style={{ fontFamily: Fonts.sans, fontWeight: "500", color: colors.text }}
                   numberOfLines={1}
                 >
                   {server?.label || "Local Server"}
@@ -255,7 +313,7 @@ export default function HomeScreen() {
               >
                 <Text
                   className="text-xs"
-                  style={{ color: "#ef4444", fontFamily: Fonts.sans }}
+                  style={{ color: colors.destructive, fontFamily: Fonts.sans }}
                 >
                   Disconnect
                 </Text>

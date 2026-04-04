@@ -11,10 +11,11 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LeftSheet } from "@/components/left-sheet";
+
 import { Logomark } from "@/components/logomark";
 import { Spinner } from "@/components/spinner";
-import { blue, Colors, Fonts } from "@/constants/theme";
+import { Fonts } from "@/constants/theme";
+import { useTheme } from "@/contexts/theme-context";
 import {
   useSessionStatuses,
   useSessions,
@@ -38,12 +39,7 @@ function formatTime(timestamp: number): string {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function getStatusColor(): { busy: string; error: string } {
-  return {
-    busy: blue.dark[8],
-    error: "#ef4444",
-  };
-}
+// Status colors are now provided by the theme via useTheme()
 
 function getTimeGroup(timestamp: number): string {
   const now = new Date();
@@ -102,10 +98,11 @@ function groupByTime(sessions: Session[]): GroupedSessions {
 
 function SessionStatusIcon({
   status,
+  colors,
 }: {
   status: SessionStatus | undefined;
+  colors: { info: string; destructive: string; muted: string };
 }) {
-  const statusColors = getStatusColor();
   if (!status || status.type === "idle") {
     return (
       <View
@@ -121,16 +118,16 @@ function SessionStatusIcon({
             width: 10,
             height: 2,
             borderRadius: 1,
-            backgroundColor: "#d4d4d4",
+            backgroundColor: colors.muted,
           }}
         />
       </View>
     );
   }
   if (status.type === "busy") {
-    return <Spinner size={14} color={statusColors.busy} />;
+    return <Spinner size={14} color={colors.info} />;
   }
-  return <Ionicons name="alert-circle" size={14} color={statusColors.error} />;
+  return <Ionicons name="alert-circle" size={14} color={colors.destructive} />;
 }
 
 export default function SessionsScreen() {
@@ -140,9 +137,8 @@ export default function SessionsScreen() {
   }>();
 
   const insets = useSafeAreaInsets();
-  const colors = Colors.dark;
+  const { colors } = useTheme();
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [groupMode, setGroupMode] = useState<GroupMode>("status");
   const { sessions, loading, error, refresh, create, remove } = useSessions({
     directory,
@@ -166,7 +162,7 @@ export default function SessionsScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <View className="flex-1" style={{ paddingTop: insets.top, backgroundColor: colors.background }}>
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3">
         <View className="flex-row items-center" style={{ gap: 12 }}>
@@ -176,22 +172,17 @@ export default function SessionsScreen() {
           <View className="flex-row items-center" style={{ gap: 8 }}>
             <Logomark size={16} />
             <Text
-              className="text-foreground text-base"
-              style={{ fontFamily: Fonts.sans, fontWeight: "600" }}
+              className="text-base"
+              style={{ fontFamily: Fonts.sans, fontWeight: "600", color: colors.text }}
               numberOfLines={1}
             >
               {name || "Sessions"}
             </Text>
           </View>
         </View>
-        <View className="flex-row items-center" style={{ gap: 12 }}>
-          <Pressable hitSlop={8} onPress={() => setMenuOpen(true)}>
-            <Ionicons name="menu" size={22} color={colors.text} />
-          </Pressable>
-          <Pressable hitSlop={8} onPress={handleNewSession}>
-            <Ionicons name="add" size={24} color={colors.text} />
-          </Pressable>
-        </View>
+        <Pressable hitSlop={8} onPress={handleNewSession}>
+          <Ionicons name="add" size={24} color={colors.text} />
+        </Pressable>
       </View>
 
       <ScrollView
@@ -202,8 +193,8 @@ export default function SessionsScreen() {
         <View className="px-6 mt-2">
           <View className="flex-row items-center justify-between mb-4">
             <Text
-              className="text-foreground text-base"
-              style={{ fontFamily: Fonts.sans, fontWeight: "600" }}
+              className="text-base"
+              style={{ fontFamily: Fonts.sans, fontWeight: "600", color: colors.text }}
             >
               Sessions
             </Text>
@@ -222,8 +213,8 @@ export default function SessionsScreen() {
                   color={colors.muted}
                 />
                 <Text
-                  className="text-muted text-xs"
-                  style={{ fontFamily: Fonts.sans }}
+                  className="text-xs"
+                  style={{ fontFamily: Fonts.sans, color: colors.muted }}
                 >
                   {groupMode === "status" ? "Status" : "Time"}
                 </Text>
@@ -240,14 +231,14 @@ export default function SessionsScreen() {
             </View>
           ) : error ? (
             <View className="items-center py-8">
-              <Text className="text-muted text-sm mb-3">{error}</Text>
+              <Text className="text-sm mb-3" style={{ color: colors.muted }}>{error}</Text>
               <Button variant="outline" size="sm" onPress={refresh}>
                 <Button.Label>Retry</Button.Label>
               </Button>
             </View>
           ) : sessions.length === 0 ? (
             <View className="items-center py-8">
-              <Text className="text-muted text-sm mb-3">No sessions yet</Text>
+              <Text className="text-sm mb-3" style={{ color: colors.muted }}>No sessions yet</Text>
               <Button variant="outline" size="sm" onPress={handleNewSession}>
                 <Ionicons name="add" size={16} color={colors.text} />
                 <Button.Label>New Session</Button.Label>
@@ -266,27 +257,28 @@ export default function SessionsScreen() {
                         borderRadius: 4,
                         backgroundColor:
                           group.label === "Running"
-                            ? "#60a5fa"
+                            ? colors.info
                             : group.label === "Needs Attention"
-                              ? "#ef4444"
-                              : "#22c55e",
+                              ? colors.destructive
+                              : colors.success,
                       }}
                     />
                   )}
                   <Text
-                    className="text-muted text-xs"
+                    className="text-xs"
                     style={{
                       fontFamily: Fonts.sans,
                       fontWeight: "600",
                       textTransform: "uppercase",
                       letterSpacing: 0.5,
+                      color: colors.muted,
                     }}
                   >
                     {group.label}
                   </Text>
                   <Text
-                    className="text-muted text-xs"
-                    style={{ fontFamily: Fonts.sans }}
+                    className="text-xs"
+                    style={{ fontFamily: Fonts.sans, color: colors.muted }}
                   >
                     ({group.sessions.length})
                   </Text>
@@ -320,18 +312,18 @@ export default function SessionsScreen() {
                           className="flex-row items-center flex-1"
                           style={{ gap: 8 }}
                         >
-                          <SessionStatusIcon status={sessionStatus} />
+                          <SessionStatusIcon status={sessionStatus} colors={colors} />
                           <Text
-                            className="text-foreground text-sm flex-1"
-                            style={{ fontFamily: Fonts.sans }}
+                            className="text-sm flex-1"
+                            style={{ fontFamily: Fonts.sans, color: colors.text }}
                             numberOfLines={1}
                           >
                             {session.title || "Untitled"}
                           </Text>
                         </View>
                         <Text
-                          className="text-muted text-xs ml-4"
-                          style={{ flexShrink: 0 }}
+                          className="text-xs ml-4"
+                          style={{ flexShrink: 0, color: colors.muted }}
                         >
                           {formatTime(session.time.updated)}
                         </Text>
@@ -355,7 +347,7 @@ export default function SessionsScreen() {
                       {sessionStatus?.type === "busy" && (
                         <Text
                           className="text-xs ml-6 mt-0.5"
-                          style={{ color: "#60a5fa", fontFamily: Fonts.sans }}
+                          style={{ color: colors.info, fontFamily: Fonts.sans }}
                         >
                           Running...
                         </Text>
@@ -363,14 +355,14 @@ export default function SessionsScreen() {
                       {sessionStatus?.type === "retry" && (
                         <Text
                           className="text-xs ml-6 mt-0.5"
-                          style={{ color: "#ef4444", fontFamily: Fonts.sans }}
+                          style={{ color: colors.destructive, fontFamily: Fonts.sans }}
                         >
                           Retry #{sessionStatus.attempt}:{" "}
                           {sessionStatus.message}
                         </Text>
                       )}
                       {session.summary && (
-                        <Text className="text-muted text-xs mt-1 ml-6">
+                        <Text className="text-xs mt-1 ml-6" style={{ color: colors.muted }}>
                           +{session.summary.additions} -
                           {session.summary.deletions} in {session.summary.files}{" "}
                           file{session.summary.files !== 1 ? "s" : ""}
@@ -422,164 +414,6 @@ export default function SessionsScreen() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog>
-
-      {/* Left Sheet Navigation */}
-      <LeftSheet open={menuOpen} onClose={() => setMenuOpen(false)}>
-        <View className="flex-1" style={{ paddingTop: insets.top }}>
-          {/* New Session */}
-          <View className="px-4 pt-4 pb-3">
-            <Button
-              variant="outline"
-              onPress={() => {
-                setMenuOpen(false);
-                handleNewSession();
-              }}
-            >
-              <Ionicons name="add" size={18} color={colors.text} />
-              <Button.Label>New Session</Button.Label>
-            </Button>
-          </View>
-
-          {/* Session list */}
-          <ScrollView
-            className="flex-1 px-4"
-            showsVerticalScrollIndicator={false}
-          >
-            {loading ? (
-              <View className="items-center py-8">
-                <ActivityIndicator color={colors.muted} />
-              </View>
-            ) : sessions.length === 0 ? (
-              <Text className="text-muted text-sm text-center py-8">
-                No sessions yet
-              </Text>
-            ) : (
-              grouped.map((group) => (
-                <View key={`drawer-${group.label}`} className="mb-3">
-                  <View
-                    className="flex-row items-center px-2 mb-1"
-                    style={{ gap: 5 }}
-                  >
-                    {groupMode === "status" && (
-                      <View
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: 3,
-                          backgroundColor:
-                            group.label === "Running"
-                              ? "#60a5fa"
-                              : group.label === "Needs Attention"
-                                ? "#ef4444"
-                                : "#22c55e",
-                        }}
-                      />
-                    )}
-                    <Text
-                      className="text-muted text-xs"
-                      style={{
-                        fontFamily: Fonts.sans,
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {group.label}
-                    </Text>
-                  </View>
-
-                  {group.sessions.map((session) => {
-                    const sessionStatus = statuses[session.id];
-                    return (
-                      <Pressable
-                        key={session.id}
-                        className="py-3 px-2 rounded-lg"
-                        onPress={() => {
-                          setMenuOpen(false);
-                          router.push(`/session/${session.id}`);
-                        }}
-                      >
-                        <View
-                          className="flex-row items-center"
-                          style={{ gap: 8 }}
-                        >
-                          <SessionStatusIcon status={sessionStatus} />
-                          <Text
-                            className="text-foreground text-sm flex-1"
-                            style={{ fontFamily: Fonts.sans }}
-                            numberOfLines={1}
-                          >
-                            {session.title || "Untitled"}
-                          </Text>
-                        </View>
-                        <View
-                          className="flex-row items-center ml-6 mt-0.5"
-                          style={{ gap: 6 }}
-                        >
-                          <Text className="text-muted text-xs">
-                            {formatTime(session.time.updated)}
-                          </Text>
-                          {sessionStatus?.type === "busy" && (
-                            <Text
-                              className="text-xs"
-                              style={{
-                                color: "#60a5fa",
-                                fontFamily: Fonts.sans,
-                              }}
-                            >
-                              Running
-                            </Text>
-                          )}
-                          {sessionStatus?.type === "retry" && (
-                            <Text
-                              className="text-xs"
-                              style={{
-                                color: "#ef4444",
-                                fontFamily: Fonts.sans,
-                              }}
-                            >
-                              Retry #{sessionStatus.attempt}
-                            </Text>
-                          )}
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ))
-            )}
-          </ScrollView>
-
-          {/* Project info */}
-          <View
-            className="px-4 py-3 border-t border-border"
-            style={{ paddingBottom: insets.bottom + 8 }}
-          >
-            <View className="flex-row items-center gap-2">
-              <Ionicons
-                name="folder-outline"
-                size={16}
-                color={colors.muted}
-              />
-              <Text
-                className="text-foreground text-sm"
-                style={{ fontFamily: Fonts.sans, fontWeight: "500" }}
-                numberOfLines={1}
-              >
-                {name || "Project"}
-              </Text>
-            </View>
-            {directory && (
-              <Text
-                className="text-muted text-xs mt-0.5 ml-6"
-                numberOfLines={1}
-              >
-                {directory}
-              </Text>
-            )}
-          </View>
-        </View>
-      </LeftSheet>
     </View>
   );
 }

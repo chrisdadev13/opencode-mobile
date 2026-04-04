@@ -91,7 +91,7 @@ export function useMarkdownStyles() {
           borderRadius: 4,
         },
         link: {
-          color: "#f5a623",
+          color: colors.accent,
           textDecorationLine: "underline",
         },
         list_item: {

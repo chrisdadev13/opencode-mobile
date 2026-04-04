@@ -129,7 +129,7 @@ export function Question({
         style={{
           backgroundColor: colors.surface,
           borderLeftWidth: 3,
-          borderLeftColor: colors.pink,
+          borderLeftColor: colors.primary,
         }}
         {...props}
       >

@@ -102,7 +102,7 @@ export const MessageContent = memo(function MessageContent({
         style={{
           backgroundColor: isUser ? colors.surface : "transparent",
           borderLeftWidth: 3,
-          borderLeftColor: isUser ? colors.yellow : "#3f3f3f",
+          borderLeftColor: isUser ? colors.accent : colors.border,
         }}
         {...props}
       >
@@ -124,6 +124,7 @@ export const MessageText = memo(function MessageText({
   text,
 }: MessageTextProps) {
   const { isUser } = useMessage();
+  const colors = useColors();
   const mdStyles = useMarkdownStyles();
 
   if (!text) return null;
@@ -131,8 +132,8 @@ export const MessageText = memo(function MessageText({
   if (isUser) {
     return (
       <Text
-        className="text-sm text-foreground"
-        style={{ fontFamily: Fonts.mono, lineHeight: 20 }}
+        className="text-sm"
+        style={{ fontFamily: Fonts.mono, lineHeight: 20, color: colors.text }}
         selectable
       >
         {text}

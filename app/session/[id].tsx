@@ -185,7 +185,7 @@ export default function SessionScreen() {
             ) : (
               <FlashList
                 ref={listRef}
-                data={messages.filter((msg) => msg.info?.role)}
+                data={messages.filter((msg) => msg.info?.role && msg.parts.length > 0)}
                 keyExtractor={(item) => item.info.id}
                 renderItem={({ item }) => (
                   <Message from={item.info.role}>
@@ -254,7 +254,7 @@ export default function SessionScreen() {
 
                     {error && (
                       <View className="px-4 py-2">
-                        <Text className="text-danger text-xs">{error}</Text>
+                        <Text className="text-xs" style={{ color: colors.destructive }}>{error}</Text>
                       </View>
                     )}
                   </>
@@ -268,8 +268,7 @@ export default function SessionScreen() {
               style={{ paddingBottom: Math.max(insets.bottom, 18) }}
             >
               <PromptInput
-                className="bg-surface"
-                style={{ borderLeftWidth: 3, borderLeftColor: "#e55b7a" }}
+                style={{ borderLeftWidth: 3, borderLeftColor: colors.primary, backgroundColor: colors.surface }}
                 value={inputText}
                 onValueChange={setInputText}
                 onSubmit={handleSend}
