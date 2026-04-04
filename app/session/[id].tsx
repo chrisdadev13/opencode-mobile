@@ -126,7 +126,7 @@ export default function SessionScreen() {
   // Auto-send initial message when session is ready
   const hasSentInitialMessage = useRef(false);
   useEffect(() => {
-    if (initialMessage && !hasSentInitialMessage.current && !loading && messages.length === 0) {
+    if (initialMessage?.trim() && !hasSentInitialMessage.current && !loading && messages.length === 0) {
       hasSentInitialMessage.current = true;
       sendMessage(
         initialMessage,
