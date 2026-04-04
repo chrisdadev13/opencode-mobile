@@ -45,7 +45,7 @@ export function Confirmation({
         style={{
           backgroundColor: colors.surface,
           borderLeftWidth: 3,
-          borderLeftColor: "#f59e0b",
+          borderLeftColor: colors.warning,
         }}
         {...props}
       >
@@ -79,7 +79,7 @@ export function ConfirmationHeader({
       }}
       {...props}
     >
-      <Ionicons name="shield-checkmark-outline" size={18} color="#f59e0b" />
+      <Ionicons name="shield-checkmark-outline" size={18} color={colors.warning} />
       <Text
         style={{
           fontFamily: Fonts.sans,

@@ -50,7 +50,7 @@ export function Shimmer({ children, duration = 1400, style }: ShimmerProps) {
         {
           fontFamily: Fonts.mono,
           fontSize: 14,
-          color: colors.yellow,
+          color: colors.accent,
           lineHeight: 20,
         },
         style,

@@ -59,7 +59,7 @@ export function ChangesTab({
   if (files.length === 0) {
     return (
       <View className="flex-1 items-center justify-center">
-        <Text className="text-muted text-sm" style={{ fontFamily: Fonts.sans }}>
+        <Text className="text-sm" style={{ fontFamily: Fonts.sans, color: colors.muted }}>
           No changes yet
         </Text>
       </View>
@@ -75,14 +75,14 @@ export function ChangesTab({
       {files.map((file, index) => (
         <View key={`${file.path}-${index}`} className="px-3 mt-2">
           <Pressable
-            className="flex-row items-center rounded-xl border border-border bg-surface px-3"
-            style={{ height: 48, gap: 10 }}
+            className="flex-row items-center rounded-xl border px-3"
+            style={{ borderColor: colors.border, backgroundColor: colors.surface, height: 48, gap: 10 }}
             onPress={() => handleFilePress(file.path)}
           >
             <FileIcon filename={file.path} size={14} />
             <Text
-              className="text-foreground text-sm flex-1"
-              style={{ fontFamily: Fonts.sans, fontWeight: "500" }}
+              className="text-sm flex-1"
+              style={{ fontFamily: Fonts.sans, fontWeight: "500", color: colors.text }}
               numberOfLines={1}
             >
               {file.path.split("/").pop()}
@@ -93,7 +93,7 @@ export function ChangesTab({
                   fontFamily: Fonts.mono,
                   fontSize: 13,
                   fontWeight: "600",
-                  color: "#22c55e",
+                  color: colors.success,
                 }}
               >
                 +{file.added}
@@ -103,7 +103,7 @@ export function ChangesTab({
                   fontFamily: Fonts.mono,
                   fontSize: 13,
                   fontWeight: "600",
-                  color: "#ef4444",
+                  color: colors.destructive,
                 }}
               >
                 -{file.removed}
@@ -119,8 +119,8 @@ export function ChangesTab({
           </Pressable>
           {selectedFile === file.path && (
             <View
-              style={{ height: 450 }}
-              className="mt-1 mx-1 rounded-b-xl overflow-hidden border border-border"
+              style={{ height: 450, borderColor: colors.border }}
+              className="mt-1 mx-1 rounded-b-xl overflow-hidden border"
             >
               {loadingDiff ? (
                 <View className="flex-1 items-center justify-center">
@@ -130,7 +130,7 @@ export function ChangesTab({
                 <DiffViewer content={diffContent} filename={file.path} />
               ) : (
                 <View className="flex-1 items-center justify-center">
-                  <Text className="text-muted text-xs">
+                  <Text className="text-xs" style={{ color: colors.muted }}>
                     Could not load file content
                   </Text>
                 </View>

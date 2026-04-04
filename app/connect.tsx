@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { withUniwind } from "uniwind";
 import { Logo } from "@/components/logo";
+import { useTheme } from "@/contexts/theme-context";
 import {
   addServer,
   getLastUsedServer,
@@ -24,6 +25,7 @@ export default function ConnectScreen() {
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
   const [error, setError] = useState("");
+  const { colors } = useTheme();
 
   if (getLastUsedServer()) {
     return <Redirect href="/" />;
@@ -60,7 +62,8 @@ export default function ConnectScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-background"
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
     >
       <ScrollView
         contentContainerClassName="flex-1 justify-center px-6 pb-8"
@@ -72,7 +75,7 @@ export default function ConnectScreen() {
           <View className="mt-4">
             <Logo />
           </View>
-          <Text className="text-muted text-base mt-5">
+          <Text className="text-base mt-5" style={{ color: colors.muted }}>
             Connect to your server
           </Text>
         </View>
@@ -85,7 +88,8 @@ export default function ConnectScreen() {
               placeholder="http://192.168.1.42:4096"
               value={url}
               variant="secondary"
-              className="py-2.5 rounded-xl border border-border"
+              className="py-2.5 rounded-xl border"
+              style={{ borderColor: colors.border }}
               onChangeText={(text) => {
                 setUrl(text);
                 if (error) setError("");
@@ -101,13 +105,14 @@ export default function ConnectScreen() {
             <Input
               placeholder="e.g. Home machine"
               variant="secondary"
-              className="py-2.5 rounded-xl border border-border"
+              className="py-2.5 rounded-xl border"
+              style={{ borderColor: colors.border }}
               value={label}
               onChangeText={setLabel}
             />
           </TextField>
 
-          {error ? <Text className="text-danger text-sm">{error}</Text> : null}
+          {error ? <Text className="text-sm" style={{ color: colors.destructive }}>{error}</Text> : null}
         </View>
 
         {/* Connect Button */}
@@ -117,9 +122,9 @@ export default function ConnectScreen() {
 
         {/* Divider */}
         <View className="flex-row items-center my-6">
-          <View className="flex-1 h-px bg-border" />
-          <Text className="text-muted text-sm mx-4">or</Text>
-          <View className="flex-1 h-px bg-border" />
+          <View className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
+          <Text className="text-sm mx-4" style={{ color: colors.muted }}>or</Text>
+          <View className="flex-1 h-px" style={{ backgroundColor: colors.border }} />
         </View>
 
         {/* Scan QR Button */}
@@ -127,7 +132,7 @@ export default function ConnectScreen() {
           <StyledIonicons
             name="qr-code-outline"
             size={18}
-            className="text-foreground"
+            style={{ color: colors.text }}
           />
           <Button.Label>Scan QR from terminal</Button.Label>
         </Button>
