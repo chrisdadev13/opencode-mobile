@@ -40,10 +40,11 @@ import {
 import { useWhisper } from "@/hooks/use-whisper";
 
 export default function SessionScreen() {
-  const { id, directory, projectName } = useLocalSearchParams<{
+  const { id, directory, projectName, initialMessage } = useLocalSearchParams<{
     id: string;
     directory?: string;
     projectName?: string;
+    initialMessage?: string;
   }>();
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -105,14 +106,36 @@ export default function SessionScreen() {
     }
   }, [isRecording, transcription]);
 
+  // Handle initial message from sessions screen
+  useEffect(() => {
+    if (initialMessage) {
+      setInputText(initialMessage);
+    }
+  }, [initialMessage]);
+
   const handleMicPress = useCallback(async () => {
     const result = await toggleRecording();
     if (result) {
       lastTranscriptionRef.current = "";
     }
   }, [toggleRecording]);
+
   const activeModel = selectedModel ?? defaultModel;
   const isBusy = sessionStatus.type === "busy";
+
+  // Auto-send initial message when session is ready
+  const hasSentInitialMessage = useRef(false);
+  useEffect(() => {
+    if (initialMessage && !hasSentInitialMessage.current && !loading && messages.length === 0) {
+      hasSentInitialMessage.current = true;
+      sendMessage(
+        initialMessage,
+        activeModel ?? undefined,
+        activeAgent,
+        selectedVariant ?? undefined,
+      );
+    }
+  }, [initialMessage, loading, messages.length, sendMessage, activeModel, activeAgent, selectedVariant]);
 
   const allModels = useMemo(
     () =>

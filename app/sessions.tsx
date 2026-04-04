@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { SessionStatus } from "@opencode-ai/sdk/v2/client";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button, Dialog } from "heroui-native";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -19,6 +19,7 @@ import {
   useSessionStatuses,
   useSessions,
 } from "@/hooks/use-opencode";
+import { useWhisper } from "@/hooks/use-whisper";
 
 type Session = ReturnType<typeof useSessions>["sessions"][number];
 type GroupMode = "status" | "time";
@@ -153,6 +154,14 @@ export default function SessionsScreen() {
     title: string;
   } | null>(null);
 
+  const {
+    isRecording,
+    isLoading: whisperLoading,
+    transcription,
+    toggleRecording,
+    stopRecording,
+  } = useWhisper();
+
   const grouped =
     groupMode === "status"
       ? groupByStatus(sessions, statuses)
@@ -164,6 +173,27 @@ export default function SessionsScreen() {
       router.push(`/session/${session.id}`);
     }
   }
+
+  const handleMicPress = useCallback(async () => {
+    const result = await toggleRecording();
+    if (result) {
+      const session = await create();
+      if (session) {
+        router.push(`/session/${session.id}?initialMessage=${encodeURIComponent(result)}`);
+      }
+    }
+  }, [toggleRecording, create, router]);
+
+  // Stop and create session directly
+  const handleStopAndCreate = useCallback(async () => {
+    const result = await stopRecording();
+    if (result && result.trim()) {
+      const session = await create();
+      if (session) {
+        router.push(`/session/${session.id}?initialMessage=${encodeURIComponent(result)}`);
+      }
+    }
+  }, [stopRecording, create, router]);
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
@@ -384,6 +414,86 @@ export default function SessionsScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Floating mic button */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: insets.bottom + 24,
+          alignSelf: "center",
+          alignItems: "center",
+        }}
+      >
+        {isRecording && transcription && (
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 20,
+              marginBottom: 12,
+              maxWidth: 280,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 3,
+            }}
+          >
+            <Text
+              className="text-foreground text-sm"
+              style={{ fontFamily: Fonts.sans }}
+              numberOfLines={2}
+            >
+              {transcription}
+            </Text>
+          </View>
+        )}
+        {isRecording ? (
+          <Pressable
+            onPress={handleStopAndCreate}
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: blue.dark[8],
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+          >
+            <Ionicons name="stop" size={24} color="#fff" />
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={handleMicPress}
+            disabled={whisperLoading}
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: colors.surface,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+          >
+            {whisperLoading ? (
+              <ActivityIndicator size="small" color={colors.muted} />
+            ) : (
+              <Ionicons name="mic-outline" size={24} color={colors.text} />
+            )}
+          </Pressable>
+        )}
+      </View>
 
       {/* Delete confirmation dialog */}
       <Dialog
