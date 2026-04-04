@@ -1,0 +1,25 @@
+app/session/[id].tsx
+  306aff2ff8cce9b8 43,47,109-115,122,126-138
+app/sessions.tsx
+  306aff2ff8cce9b8 5,22,157-164,177-197,418-497
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "e31bfc310343f8f49870386ac5f01bded9988a4c",
+  "prompts": {
+    "306aff2ff8cce9b8": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_2a5fbc541ffeBKffVTax4ovAF7",
+        "model": "opencode/minimax-m2.5-free"
+      },
+      "human_author": "Chris",
+      "messages": [],
+      "total_additions": 212,
+      "total_deletions": 79,
+      "accepted_lines": 143,
+      "overriden_lines": 0
+    }
+  }
+}
