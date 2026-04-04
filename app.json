@@ -15,7 +15,8 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true
-        }
+        },
+        "NSMicrophoneUsageDescription": "This app requires microphone access to transcribe speech to text"
       }
     },
     "android": {
@@ -29,7 +30,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.chrisdadev.opencodemobile",
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "output": "static",

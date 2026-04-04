@@ -1,7 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -36,12 +37,14 @@ import {
   useProviders,
   useSession,
 } from "@/hooks/use-opencode";
+import { useWhisper } from "@/hooks/use-whisper";
 
 export default function SessionScreen() {
-  const { id, directory, projectName } = useLocalSearchParams<{
+  const { id, directory, projectName, initialMessage } = useLocalSearchParams<{
     id: string;
     directory?: string;
     projectName?: string;
+    initialMessage?: string;
   }>();
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -85,8 +88,54 @@ export default function SessionScreen() {
   const projectInfo = useProjectInfo();
   const { providers, defaultModel } = useProviders();
 
+  const {
+    isRecording,
+    isLoading: whisperLoading,
+    downloadProgress,
+    transcription,
+    toggleRecording,
+    stopRecording,
+  } = useWhisper();
+
+  // Append live transcription to input
+  const lastTranscriptionRef = useRef("");
+  useEffect(() => {
+    if (isRecording && transcription && transcription !== lastTranscriptionRef.current) {
+      lastTranscriptionRef.current = transcription;
+      setInputText(transcription);
+    }
+  }, [isRecording, transcription]);
+
+  // Handle initial message from sessions screen
+  useEffect(() => {
+    if (initialMessage) {
+      setInputText(initialMessage);
+    }
+  }, [initialMessage]);
+
+  const handleMicPress = useCallback(async () => {
+    const result = await toggleRecording();
+    if (result) {
+      lastTranscriptionRef.current = "";
+    }
+  }, [toggleRecording]);
+
   const activeModel = selectedModel ?? defaultModel;
   const isBusy = sessionStatus.type === "busy";
+
+  // Auto-send initial message when session is ready
+  const hasSentInitialMessage = useRef(false);
+  useEffect(() => {
+    if (initialMessage?.trim() && !hasSentInitialMessage.current && !loading && messages.length === 0) {
+      hasSentInitialMessage.current = true;
+      sendMessage(
+        initialMessage,
+        activeModel ?? undefined,
+        activeAgent,
+        selectedVariant ?? undefined,
+      );
+    }
+  }, [initialMessage, loading, messages.length, sendMessage, activeModel, activeAgent, selectedVariant]);
 
   const allModels = useMemo(
     () =>
@@ -276,7 +325,57 @@ export default function SessionScreen() {
               >
                 <PromptInputTextarea />
                 <PromptInputActions>
-                  <PromptInputAction type="send" />
+                  {isRecording ? (
+                    <Pressable
+                      hitSlop={8}
+                      onPress={stopRecording}
+                      style={{
+                        position: "absolute",
+                        bottom: 8,
+                        right: 8,
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: colors.accent,
+                      }}
+                    >
+                      <Ionicons
+                        name="stop"
+                        size={18}
+                        color={colors.background}
+                      />
+                    </Pressable>
+                  ) : inputText.trim() === "" ? (
+                    <Pressable
+                      hitSlop={8}
+                      onPress={handleMicPress}
+                      disabled={isBusy || whisperLoading}
+                      style={{
+                        position: "absolute",
+                        bottom: 8,
+                        right: 8,
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {whisperLoading ? (
+                        <ActivityIndicator size="small" color={colors.muted} />
+                      ) : (
+                        <Ionicons
+                          name="mic-outline"
+                          size={18}
+                          color={colors.muted}
+                        />
+                      )}
+                    </Pressable>
+                  ) : (
+                    <PromptInputAction type="send" />
+                  )}
                 </PromptInputActions>
               </PromptInput>
               <PromptInputToolbar>
